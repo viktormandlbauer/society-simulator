@@ -1,0 +1,15 @@
+node_modules
+.npmrc
+.git
+.gitignore
+.next/cache
+.next/types
+.DS_Store
+*.log
+.vscode
+coverage
+dist
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
