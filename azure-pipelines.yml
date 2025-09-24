@@ -4,8 +4,8 @@ trigger:
       - main
 
 variables:
-  poolName: 'SelfHosted'
-  targetHost: 'example.internal'
+  poolName: 'hetzner-cloud'
+  targetHost: 'azure-depl-srv'
   healthUrl: 'https://example.internal/health'
 
 stages:
