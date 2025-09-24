@@ -1,0 +1,49 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  poolName: 'SelfHosted'
+  targetHost: 'example.internal'
+  healthUrl: 'https://example.internal/health'
+
+stages:
+  - stage: HealthCheck
+    displayName: 'Simple Host Health Check'
+    jobs:
+      - job: check
+        displayName: 'Run simple connectivity check'
+        pool:
+          name: '$(poolName)'
+        steps:
+          - checkout: none
+
+          - task: Bash@3
+            displayName: 'Ping host'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+                echo "Pinging $(targetHost)..."
+                if ping -c 3 $(targetHost); then
+                  echo "Ping successful"
+                else
+                  echo "Ping failed"
+                  exit 1
+                fi
+
+          - task: Bash@3
+            displayName: 'Check health endpoint'
+            inputs:
+              targetType: 'inline'
+              script: |
+                set -e
+                echo "Checking health endpoint $(healthUrl)..."
+                status=$(curl -s -o /dev/null -w "%{http_code}" $(healthUrl))
+                if [ "$status" -ge 200 ] && [ "$status" -lt 400 ]; then
+                  echo "Health check passed with status $status"
+                else
+                  echo "Health check failed with status $status"
+                  exit 1
+                fi
