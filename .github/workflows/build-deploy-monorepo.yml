@@ -1,0 +1,124 @@
+name: Monorepo CI (Build & Run Containers)
+
+on:
+  push:
+    branches: [ test ]
+
+jobs:
+  detect-changes:
+    name: Detect Changed Projects
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check which projects changed
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  frontend:
+    name: Frontend CI (Build & Run Container)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: self-hosted
+    env:
+      FRONTEND_IMG: frontend:local
+      FRONTEND_CTN: frontend_local
+      FRONTEND_PORT: "3000"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Docker info
+        run: |
+          docker version
+          docker info
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (Next.js)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run tests
+        working-directory: frontend
+        run: npm test --if-present
+
+      - name: Build Docker image (frontend)
+        run: |
+          docker build \
+            --pull \
+            -t "${FRONTEND_IMG}" \
+            -f frontend/Dockerfile \
+            frontend
+
+      - name: Run frontend container (no health check)
+        run: |
+          docker run -d --rm \
+            --name "${FRONTEND_CTN}" \
+            -p ${FRONTEND_PORT}:3000 \
+            "${FRONTEND_IMG}"
+          echo "Frontend container started successfully."
+
+      - name: Stop frontend container
+        if: always()
+        run: |
+          docker stop "${FRONTEND_CTN}" || true
+
+  backend:
+    name: Backend CI (Build & Run Container)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: self-hosted
+    env:
+      BACKEND_IMG: backend:local
+      BACKEND_CTN: backend_local
+      BACKEND_PORT: "8080"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Docker info
+        run: |
+          docker version
+          docker info
+
+      - name: Build backend JAR
+        working-directory: backend
+        run: ./mvnw -B -DskipTests clean package --no-transfer-progress
+
+      - name: Run tests
+        working-directory: backend
+        run: ./mvnw -B test --no-transfer-progress
+
+      - name: Build Docker image (backend)
+        run: |
+          docker build \
+            --pull \
+            -t "${BACKEND_IMG}" \
+            -f backend/Dockerfile \
+            backend
+
+      - name: Run backend container (no health check)
+        run: |
+          docker run -d --rm \
+            --name "${BACKEND_CTN}" \
+            -p ${BACKEND_PORT}:8080 \
+            "${BACKEND_IMG}"
+          echo "Backend container started successfully."
+
+      - name: Stop backend container
+        if: always()
+        run: |
+          docker stop "${BACKEND_CTN}" || true
