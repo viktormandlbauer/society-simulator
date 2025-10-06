@@ -1,0 +1,74 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  detect-changes:
+    name: Detect Changed Projects
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check which projects changed
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            shared:
+              - 'shared/**'
+
+  frontend:
+    name: Frontend CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install deps
+        run: cd frontend && npm install
+      - name: Run build
+        run: cd frontend && npm run build
+      - name: Run tests
+        run: cd frontend && npm test
+
+  backend:
+    name: Backend CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Build backend
+        run: cd backend && ./mvnw clean package
+      - name: Run tests
+        run: cd backend && ./mvnw test
+
+  shared:
+    name: Shared CI
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run lint/checks
+        run: cd shared && echo "Run shared library checks here"
