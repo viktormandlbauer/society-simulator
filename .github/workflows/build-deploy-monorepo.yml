@@ -68,6 +68,8 @@ jobs:
         run: |
           docker run -d --name "${FRONTEND_CTN}" \
             -p ${FRONTEND_PORT}:3000 \
+            -e NEXT_PUBLIC_GAMESTATE_URL=${NEXT_PUBLIC_GAMESTATE_URL} \
+            -e NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL} \
             "${FRONTEND_IMG}"
 
   backend:
