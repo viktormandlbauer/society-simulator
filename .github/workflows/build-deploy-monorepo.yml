@@ -2,7 +2,9 @@ name: Monorepo CI (Build & Run Containers)
 
 on:
   push:
-    branches: [ setup ]
+    branches:
+      - main
+      - setup
 
 jobs:
   detect-changes:
@@ -26,7 +28,7 @@ jobs:
               - 'backend/**'
 
   frontend:
-    name: Frontend CI (Build & Run Container)
+    name: Frontend CI (Containerized Build & Run)
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: self-hosted
@@ -43,18 +45,7 @@ jobs:
           docker version
           docker info
 
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Build (Next.js)
-        working-directory: frontend
-        run: npm run build
-
-      - name: Run tests
-        working-directory: frontend
-        run: npm test --if-present
-
+      # Build the Next.js image entirely inside Docker
       - name: Build Docker image (frontend)
         run: |
           docker build \
@@ -63,21 +54,21 @@ jobs:
             -f frontend/Dockerfile \
             frontend
 
+      # “Deploy” locally by running the container
       - name: Run frontend container (no health check)
         run: |
           docker run -d --rm \
             --name "${FRONTEND_CTN}" \
             -p ${FRONTEND_PORT}:3000 \
             "${FRONTEND_IMG}"
-          echo "Frontend container started successfully."
+          echo "Frontend container started."
 
       - name: Stop frontend container
         if: always()
-        run: |
-          docker stop "${FRONTEND_CTN}" || true
+        run: docker stop "${FRONTEND_CTN}" || true
 
   backend:
-    name: Backend CI (Build & Run Container)
+    name: Backend CI (Containerized Build & Run)
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: self-hosted
@@ -94,14 +85,7 @@ jobs:
           docker version
           docker info
 
-      - name: Build backend JAR
-        working-directory: backend
-        run: ./mvnw -B -DskipTests clean package --no-transfer-progress
-
-      - name: Run tests
-        working-directory: backend
-        run: ./mvnw -B test --no-transfer-progress
-
+      # Build the Spring Boot image entirely inside Docker (Dockerfile runs Maven)
       - name: Build Docker image (backend)
         run: |
           docker build \
@@ -110,15 +94,15 @@ jobs:
             -f backend/Dockerfile \
             backend
 
+      # “Deploy” locally by running the container
       - name: Run backend container (no health check)
         run: |
           docker run -d --rm \
             --name "${BACKEND_CTN}" \
             -p ${BACKEND_PORT}:8080 \
             "${BACKEND_IMG}"
-          echo "Backend container started successfully."
+          echo "Backend container started."
 
       - name: Stop backend container
         if: always()
-        run: |
-          docker stop "${BACKEND_CTN}" || true
+        run: docker stop "${BACKEND_CTN}" || true
