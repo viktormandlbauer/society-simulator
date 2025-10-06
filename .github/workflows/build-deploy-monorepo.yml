@@ -13,6 +13,7 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
+      gamestate: ${{ steps.filter.outputs.gamestate }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,6 +27,8 @@ jobs:
               - 'frontend/**'
             backend:
               - 'backend/**'
+            gamestate:
+              - 'gamestate/**'
 
   frontend:
     name: Frontend CI (Containerized Build & Run)
@@ -106,3 +109,43 @@ jobs:
       - name: Stop backend container
         if: always()
         run: docker stop "${BACKEND_CTN}" || true
+
+  gamestate:
+    name: Gamestate CI (Containerized Build & Run)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gamestate == 'true'
+    runs-on: self-hosted
+    env:
+      GAMESTATE_IMG: gamestate:local
+      GAMESTATE_CTN: gamestate_local
+      GAMESTATE_PORT: "3001"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Docker info
+        run: |
+          docker version
+          docker info
+
+      # Build the Gamestate image entirely inside Docker
+      - name: Build Docker image (gamestate)
+        run: |
+          docker build \
+            --pull \
+            -t "${GAMESTATE_IMG}" \
+            -f gamestate/Dockerfile \
+            gamestate
+
+      # “Deploy” locally by running the container
+      - name: Run gamestate container (no health check)
+        run: |
+          docker run -d --rm \
+            --name "${GAMESTATE_CTN}" \
+            -p ${GAMESTATE_PORT}:3000 \
+            "${GAMESTATE_IMG}"
+          echo "Gamestate container started."
+
+      - name: Stop gamestate container
+        if: always()
+        run: docker stop "${GAMESTATE_CTN}" || true
