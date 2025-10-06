@@ -51,6 +51,8 @@ jobs:
             --pull \
             -t "${FRONTEND_IMG}" \
             -f frontend/Dockerfile \
+            --build-arg NEXT_PUBLIC_GAMESTATE_URL=${NEXT_PUBLIC_GAMESTATE_URL} \
+            --build-arg NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL} \
             frontend
 
       - name: Stop and remove existing frontend container (if running)
