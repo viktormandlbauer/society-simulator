@@ -1,0 +1,23 @@
+name: Test Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - main
+      - setup
+jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify runner info
+        run: |
+          echo "Running on self-hosted runner:"
+          uname -a
+          whoami
+          pwd
+
+      - name: Run test command
+        run: echo "Self-hosted runner workflow executed successfully!"
