@@ -2,7 +2,7 @@ name: Monorepo CI (Build & Run Containers)
 
 on:
   push:
-    branches: [ test ]
+    branches: [ setup ]
 
 jobs:
   detect-changes:
