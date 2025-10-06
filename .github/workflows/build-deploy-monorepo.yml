@@ -6,6 +6,9 @@ on:
       - main
       - setup
 
+env:
+  CLOUD_IP: "162.55.174.238"
+
 jobs:
   detect-changes:
     name: Detect Changed Projects
@@ -39,6 +42,8 @@ jobs:
       FRONTEND_IMG: frontend:local
       FRONTEND_CTN: frontend_local
       FRONTEND_PORT: "3000"
+      NEXT_PUBLIC_GAMESTATE_URL: "http://${CLOUD_IP}:4000"
+      NEXT_PUBLIC_BACKEND_URL: "http://${CLOUD_IP}:8080"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,7 +109,7 @@ jobs:
     env:
       GAMESTATE_IMG: gamestate:local
       GAMESTATE_CTN: gamestate_local
-      GAMESTATE_PORT: "3001"
+      GAMESTATE_PORT: "4000"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -126,5 +131,5 @@ jobs:
       - name: Run gamestate container
         run: |
           docker run -d --name "${GAMESTATE_CTN}" \
-            -p ${GAMESTATE_PORT}:3000 \
+            -p ${GAMESTATE_PORT}:4000 \
             "${GAMESTATE_IMG}"
