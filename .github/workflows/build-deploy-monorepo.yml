@@ -43,12 +43,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Docker info
-        run: |
-          docker version
-          docker info
-
-      # Build the Next.js image entirely inside Docker
       - name: Build Docker image (frontend)
         run: |
           docker build \
@@ -57,18 +51,17 @@ jobs:
             -f frontend/Dockerfile \
             frontend
 
-      # “Deploy” locally by running the container
-      - name: Run frontend container (no health check)
+      - name: Stop existing frontend container (if running)
         run: |
-          docker run -d --rm \
-            --name "${FRONTEND_CTN}" \
+          if [ "$(docker ps -q -f name=${FRONTEND_CTN})" ]; then
+            docker stop "${FRONTEND_CTN}"
+          fi
+
+      - name: Run frontend container
+        run: |
+          docker run -d --name "${FRONTEND_CTN}" \
             -p ${FRONTEND_PORT}:3000 \
             "${FRONTEND_IMG}"
-          echo "Frontend container started."
-
-      - name: Stop frontend container
-        if: always()
-        run: docker stop "${FRONTEND_CTN}" || true
 
   backend:
     name: Backend CI (Containerized Build & Run)
@@ -83,12 +76,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Docker info
-        run: |
-          docker version
-          docker info
-
-      # Build the Spring Boot image entirely inside Docker (Dockerfile runs Maven)
       - name: Build Docker image (backend)
         run: |
           docker build \
@@ -97,18 +84,17 @@ jobs:
             -f backend/Dockerfile \
             backend
 
-      # “Deploy” locally by running the container
-      - name: Run backend container (no health check)
+      - name: Stop existing backend container (if running)
         run: |
-          docker run -d --rm \
-            --name "${BACKEND_CTN}" \
+          if [ "$(docker ps -q -f name=${BACKEND_CTN})" ]; then
+            docker stop "${BACKEND_CTN}"
+          fi
+
+      - name: Run backend container
+        run: |
+          docker run -d --name "${BACKEND_CTN}" \
             -p ${BACKEND_PORT}:8080 \
             "${BACKEND_IMG}"
-          echo "Backend container started."
-
-      - name: Stop backend container
-        if: always()
-        run: docker stop "${BACKEND_CTN}" || true
 
   gamestate:
     name: Gamestate CI (Containerized Build & Run)
@@ -123,12 +109,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Docker info
-        run: |
-          docker version
-          docker info
-
-      # Build the Gamestate image entirely inside Docker
       - name: Build Docker image (gamestate)
         run: |
           docker build \
@@ -137,15 +117,14 @@ jobs:
             -f gamestate/Dockerfile \
             gamestate
 
-      # “Deploy” locally by running the container
-      - name: Run gamestate container (no health check)
+      - name: Stop existing gamestate container (if running)
         run: |
-          docker run -d --rm \
-            --name "${GAMESTATE_CTN}" \
+          if [ "$(docker ps -q -f name=${GAMESTATE_CTN})" ]; then
+            docker stop "${GAMESTATE_CTN}"
+          fi
+
+      - name: Run gamestate container
+        run: |
+          docker run -d --name "${GAMESTATE_CTN}" \
             -p ${GAMESTATE_PORT}:3000 \
             "${GAMESTATE_IMG}"
-          echo "Gamestate container started."
-
-      - name: Stop gamestate container
-        if: always()
-        run: docker stop "${GAMESTATE_CTN}" || true
