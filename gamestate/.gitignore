@@ -34,12 +34,6 @@ pids
 *.swo
 .DS_Store
 
-# Docker
-Dockerfile
-docker-compose.yml
-*.tar
-.dockerignore
-
 # Tests
 .jest/
 vitest.*

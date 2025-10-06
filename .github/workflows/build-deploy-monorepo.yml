@@ -1,0 +1,142 @@
+name: Monorepo CI (Build & Run Containers)
+
+on:
+  push:
+    branches:
+      - main
+      - setup
+
+jobs:
+  detect-changes:
+    name: Detect Changed Projects
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      gamestate: ${{ steps.filter.outputs.gamestate }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check which projects changed
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            gamestate:
+              - 'gamestate/**'
+
+  frontend:
+    name: Frontend CI (Containerized Build & Run)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: self-hosted
+    env:
+      FRONTEND_IMG: frontend:local
+      FRONTEND_CTN: frontend_local
+      FRONTEND_PORT: "3000"
+      NEXT_PUBLIC_GAMESTATE_URL: "http://162.55.174.238:4000"
+      NEXT_PUBLIC_BACKEND_URL: "http://162.55.174.238:8080"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image (frontend)
+        run: |
+          docker build \
+            --pull \
+            -t "${FRONTEND_IMG}" \
+            -f frontend/Dockerfile \
+            --build-arg NEXT_PUBLIC_GAMESTATE_URL=${NEXT_PUBLIC_GAMESTATE_URL} \
+            --build-arg NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL} \
+            frontend
+
+      - name: Stop and remove existing frontend container (if running)
+        run: |
+          if [ "$(docker ps -q -f name=${FRONTEND_CTN})" ]; then
+            docker stop "${FRONTEND_CTN}" && docker rm "${FRONTEND_CTN}"
+          elif [ "$(docker ps -aq -f name=${FRONTEND_CTN})" ]; then
+            docker rm "${FRONTEND_CTN}"
+          fi
+
+      - name: Run frontend container
+        run: |
+          docker run -d --name "${FRONTEND_CTN}" \
+            -p ${FRONTEND_PORT}:3000 \
+            -e NEXT_PUBLIC_GAMESTATE_URL=${NEXT_PUBLIC_GAMESTATE_URL} \
+            -e NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL} \
+            "${FRONTEND_IMG}"
+
+  backend:
+    name: Backend CI (Containerized Build & Run)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: self-hosted
+    env:
+      BACKEND_IMG: backend:local
+      BACKEND_CTN: backend_local
+      BACKEND_PORT: "8080"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image (backend)
+        run: |
+          docker build \
+            --pull \
+            -t "${BACKEND_IMG}" \
+            -f backend/Dockerfile \
+            backend
+
+      - name: Stop and remove existing backend container (if running)
+        run: |
+          if [ "$(docker ps -q -f name=${BACKEND_CTN})" ]; then
+            docker stop "${BACKEND_CTN}" && docker rm "${BACKEND_CTN}"
+          elif [ "$(docker ps -aq -f name=${BACKEND_CTN})" ]; then
+            docker rm "${BACKEND_CTN}"
+          fi
+
+      - name: Run backend container
+        run: |
+          docker run -d --name "${BACKEND_CTN}" \
+            -p ${BACKEND_PORT}:8080 \
+            "${BACKEND_IMG}"
+
+  gamestate:
+    name: Gamestate CI (Containerized Build & Run)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gamestate == 'true'
+    runs-on: self-hosted
+    env:
+      GAMESTATE_IMG: gamestate:local
+      GAMESTATE_CTN: gamestate_local
+      GAMESTATE_PORT: "4000"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image (gamestate)
+        run: |
+          docker build \
+            --pull \
+            -t "${GAMESTATE_IMG}" \
+            -f gamestate/Dockerfile \
+            gamestate
+
+      - name: Stop and remove existing gamestate container (if running)
+        run: |
+          if [ "$(docker ps -q -f name=${GAMESTATE_CTN})" ]; then
+            docker stop "${GAMESTATE_CTN}" && docker rm "${GAMESTATE_CTN}"
+          elif [ "$(docker ps -aq -f name=${GAMESTATE_CTN})" ]; then
+            docker rm "${GAMESTATE_CTN}"
+          fi
+
+      - name: Run gamestate container
+        run: |
+          docker run -d --name "${GAMESTATE_CTN}" \
+            -p ${GAMESTATE_PORT}:4000 \
+            "${GAMESTATE_IMG}"
