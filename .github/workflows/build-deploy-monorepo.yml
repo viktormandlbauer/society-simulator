@@ -56,10 +56,12 @@ jobs:
             -f frontend/Dockerfile \
             frontend
 
-      - name: Stop existing frontend container (if running)
+      - name: Stop and remove existing frontend container (if running)
         run: |
           if [ "$(docker ps -q -f name=${FRONTEND_CTN})" ]; then
-            docker stop "${FRONTEND_CTN}"
+            docker stop "${FRONTEND_CTN}" && docker rm "${FRONTEND_CTN}"
+          elif [ "$(docker ps -aq -f name=${FRONTEND_CTN})" ]; then
+            docker rm "${FRONTEND_CTN}"
           fi
 
       - name: Run frontend container
@@ -89,10 +91,12 @@ jobs:
             -f backend/Dockerfile \
             backend
 
-      - name: Stop existing backend container (if running)
+      - name: Stop and remove existing backend container (if running)
         run: |
           if [ "$(docker ps -q -f name=${BACKEND_CTN})" ]; then
-            docker stop "${BACKEND_CTN}"
+            docker stop "${BACKEND_CTN}" && docker rm "${BACKEND_CTN}"
+          elif [ "$(docker ps -aq -f name=${BACKEND_CTN})" ]; then
+            docker rm "${BACKEND_CTN}"
           fi
 
       - name: Run backend container
@@ -122,10 +126,12 @@ jobs:
             -f gamestate/Dockerfile \
             gamestate
 
-      - name: Stop existing gamestate container (if running)
+      - name: Stop and remove existing gamestate container (if running)
         run: |
           if [ "$(docker ps -q -f name=${GAMESTATE_CTN})" ]; then
-            docker stop "${GAMESTATE_CTN}"
+            docker stop "${GAMESTATE_CTN}" && docker rm "${GAMESTATE_CTN}"
+          elif [ "$(docker ps -aq -f name=${GAMESTATE_CTN})" ]; then
+            docker rm "${GAMESTATE_CTN}"
           fi
 
       - name: Run gamestate container
