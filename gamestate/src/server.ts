@@ -47,7 +47,7 @@ export function createHttpServer() {
   const app = createApp();
   const server = http.createServer(app);
   const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+    cors: { origin: "*", methods: ["GET", "POST"]},
   });
   const connectedUsers = new Map<string, ConnectedUser>();
 
@@ -61,7 +61,7 @@ export function createHttpServer() {
       ...toRecord(socket.handshake.auth)
     };
 
-    const userId =
+    const userId = 
       extractFromRecord(handshakeRecord, [
         "id",
         "userId",
@@ -116,6 +116,6 @@ if (require.main === module) {
   const { server } = createHttpServer();
   const PORT = process.env.PORT || 4000;
   server.listen(PORT, () => {
-    console.log(`🚀 Server listening on http://localhost:${PORT}`);
+    console.log(`Server listening on http://localhost:${PORT}`);
   });
 }

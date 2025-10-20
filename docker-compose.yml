@@ -7,8 +7,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
-      - NEXT_PUBLIC_GAMESTATE_URL=http://localhost:4000
+      NEXT_PUBLIC_BACKEND_URL: /api
+      NEXT_PUBLIC_GAMESTATE_URL: /socket.io
+    depends_on:
+      - backend
+      - gamestate
     restart: unless-stopped
 
   backend:
@@ -20,6 +23,9 @@ services:
       - "8080:8080"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport
+    depends_on:
+      - redis
+      - postgres
     restart: unless-stopped
 
   gamestate:
@@ -32,3 +38,38 @@ services:
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+
+  postgres:
+    image: postgres:latest
+    container_name: society_postgres
+    environment:
+      - POSTGRES_USER=society_user
+      - POSTGRES_PASSWORD=secure_password
+      - POSTGRES_DB=society_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:latest
+    container_name: society_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: society_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./load-balancer/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:

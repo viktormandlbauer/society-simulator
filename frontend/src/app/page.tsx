@@ -5,8 +5,7 @@ import AvatarSelection, { AvatarOption } from '../components/AvatarSelection';
 import Chat from '../components/Chat';
 import ConnectedUsers from '../components/ConnectedUsers';
 
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_GAMESTATE_URL || 'http://localhost:4000';
+const GAMESTATE_SOCKET_PATH = process.env.GAMESTATE_SOCKET_PATH || "http://localhost:80";
 
 export default function Home() {
   const [confirmedAvatar, setConfirmedAvatar] = useState<AvatarOption | null>(null);
@@ -19,10 +18,10 @@ export default function Home() {
         <div className="flex w-full max-w-4xl flex-col items-center gap-4">
           <Chat
             className="w-full"
-            socketUrl={SOCKET_URL}
+            socketUrl={GAMESTATE_SOCKET_PATH}
             avatarClass={confirmedAvatar.iconClass}
           />
-          <ConnectedUsers className="w-full" socketUrl={SOCKET_URL} />
+          <ConnectedUsers className="w-full" socketUrl={GAMESTATE_SOCKET_PATH} />
         </div>
       ) : (
         <>

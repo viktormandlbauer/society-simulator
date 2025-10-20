@@ -1,3 +1,11 @@
-https://github.com/socketio/socket.io
+# Society Simulator
 
-https://learn.microsoft.com/en-us/answers/questions/930920/azure-devops-ci-cd-for-multiple-projects-in-the-sa
+```bash
+docker compose -f docker-compose.yml up --build --force-recreat
+```
+
+# Local development
+
+# socket.io
+* https://socket.io/docs/v3/reverse-proxy/#nginx
+* https://github.com/socketio/socket.io

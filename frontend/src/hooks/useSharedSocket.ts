@@ -14,7 +14,9 @@ const ensureSocket = (url: string): SocketRecord => {
     return existing;
   }
 
-  const socket = io(url, { transports: ['websocket'] });
+  const socket = io(url, {
+    transports: ['websocket']
+  });
   const record = { socket, subscribers: 0 };
   socketRegistry.set(url, record);
   return record;
