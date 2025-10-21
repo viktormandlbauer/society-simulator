@@ -68,10 +68,6 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    depends_on:
-      - frontend
-      - gamestate
-      - backend
     restart: unless-stopped
 
 volumes:
