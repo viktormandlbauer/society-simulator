@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - setup
+      - loadbalancer
 
 jobs:
   detect-changes:
