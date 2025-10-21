@@ -10,8 +10,8 @@ services:
       NEXT_PUBLIC_BACKEND_URL: /api
       NEXT_PUBLIC_GAMESTATE_URL: /socket.io
     depends_on:
-      - backend
       - gamestate
+      - nginx
     restart: unless-stopped
 
   backend:
@@ -24,7 +24,6 @@ services:
     environment:
       - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport
     depends_on:
-      - redis
       - postgres
     restart: unless-stopped
 
@@ -37,6 +36,8 @@ services:
       - "4000:4000"
     environment:
       - NODE_ENV=production
+    depends_on:
+      - redis
     restart: unless-stopped
 
   postgres:
