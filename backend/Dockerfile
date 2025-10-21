@@ -20,7 +20,7 @@ COPY --from=build /app/target/*-SNAPSHOT.jar /app/app.jar
 
 EXPOSE 8080
 
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport"
 
 USER appuser
 

@@ -9,12 +9,6 @@ RUN npm ci
 # Copy the rest of the source
 COPY . .
 
-# Set build-time environment variables
-ARG NEXT_PUBLIC_GAMESTATE_URL
-ARG NEXT_PUBLIC_BACKEND_URL
-ENV NEXT_PUBLIC_GAMESTATE_URL=$NEXT_PUBLIC_GAMESTATE_URL
-ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
-
 # Build the Next.js app
 RUN npm run build
 
