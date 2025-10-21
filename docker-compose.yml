@@ -64,10 +64,12 @@ services:
     container_name: society_nginx
     ports:
       - "80:80"
-    volumes:
-      - ./load-balancer/nginx.conf:/etc/nginx/nginx.conf:ro
+    build:
+      context: ./loadbalancer
+      dockerfile: Dockerfile
     depends_on:
       - frontend
+      - gamestate
       - backend
     restart: unless-stopped
 
