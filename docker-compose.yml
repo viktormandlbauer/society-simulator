@@ -65,7 +65,7 @@ services:
     ports:
       - "80:80"
     build:
-      context: ./loadbalancer
+      context: ./nginx
       dockerfile: Dockerfile
     depends_on:
       - frontend
