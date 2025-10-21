@@ -47,7 +47,7 @@ export function createHttpServer() {
   const app = createApp();
   const server = http.createServer(app);
   const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"]},
+    cors: { origin: "*", methods: ["GET", "POST"]}
   });
   const connectedUsers = new Map<string, ConnectedUser>();
 

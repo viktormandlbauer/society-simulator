@@ -5,7 +5,7 @@ import AvatarSelection, { AvatarOption } from '../components/AvatarSelection';
 import Chat from '../components/Chat';
 import ConnectedUsers from '../components/ConnectedUsers';
 
-const GAMESTATE_SOCKET_PATH = process.env.GAMESTATE_SOCKET_PATH || "http://localhost:80";
+const GAMESTATE_SOCKET_PATH = process.env.GAMESTATE_SOCKET_PATH || "/";
 
 export default function Home() {
   const [confirmedAvatar, setConfirmedAvatar] = useState<AvatarOption | null>(null);
