@@ -36,9 +36,6 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: self-hosted
-    env:
-      NEXT_PUBLIC_GAMESTATE_URL: "http://162.55.174.238:4000"
-      NEXT_PUBLIC_BACKEND_URL: "http://162.55.174.238:8080"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
