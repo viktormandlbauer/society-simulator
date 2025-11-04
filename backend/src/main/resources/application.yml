@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: "backend"
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  jpa:
+    show-sql: true
+deepinfra:
+  url: ${DEEPINFRA_API_URL}
+  key: ${DEEPINFRA_API_KEY}
+  model: ${DEEPINFRA_API_MODEL}
+
+
+
+# Logging/debugging configuration
+logging.level.org.flywaydb: INFO
+
