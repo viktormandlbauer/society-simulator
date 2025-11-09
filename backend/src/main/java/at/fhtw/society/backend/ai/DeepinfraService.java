@@ -1,10 +1,12 @@
 package at.fhtw.society.backend.ai;
 
+import at.fhtw.society.backend.game.entity.Game;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Objects;
+import java.time.Duration;
+import java.util.*;
 
 @Service
 public class DeepinfraService {
@@ -13,60 +15,73 @@ public class DeepinfraService {
     private final String model;
 
     public DeepinfraService(DeepinfraProperties props) {
-        this.http = httpClient(Objects.requireNonNull(props.getKey(), "API key is required"), Objects.requireNonNull(props.getUrl(), "API url is required"));
+        this.http = WebClient.builder()
+                .baseUrl(Objects.requireNonNull(props.getUrl(), "API url is required"))
+                .defaultHeader("Authorization", "Bearer " + Objects.requireNonNull(props.getKey(), "API key is required"))
+                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
+                .build();
         this.model = Objects.requireNonNull(props.getModel(), "API model definition is required");
     }
 
-    private WebClient httpClient(String apiKey, String url) {
-        return WebClient.builder()
-                .baseUrl(url)
-                .defaultHeader("Authorization", "Bearer " + Objects.requireNonNull(apiKey, "apiKey"))
-                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
-
     public record Message(String role, String content) {
-        public static Message user(String content)    { return new Message("user", content); }
-        public static Message system(String content)  { return new Message("system", content); }
-        public static Message assistant(String content){ return new Message("assistant", content); }
+        public static Message system(String c)    { return new Message("system", c); }
+        public static Message user(String c)      { return new Message("user", c); }
+        public static Message assistant(String c) { return new Message("assistant", c); }
     }
 
-    // === Minimal one-liner convenience ===
-    public String chat(String userMessage) {
-        return chat(this.model, java.util.List.of(Message.user(userMessage)), 0.3, 200);
+    public List<Message> initConversation(Game game) {
+        String system_context = "You are the AI Game Master for a turn-based social game.\n" +
+                "Follow the rules strictly and keep responses concise, actionable, and on-theme.\n\n" +
+                "Theme: " + game.getTheme() + '\n' +
+                "Max rounds: " + String.valueOf(game.getMaxrounds()) + '\n';
+
+        return chatReturnConversation(this.model, new ArrayList<>(List.of(Message.system(system_context))), 0.7, 512);
     }
 
-    // === Basic API call (blocking) ===
-    public String chat(String model,
-                       java.util.List<Message> messages,
-                       double temperature,
-                       int maxTokens) {
+    /** Convenience: start a convo with a single user message and get back the conversation (user + assistant). */
+    public List<Message> chatReturnConversation(String userMessage) {
+        return chatReturnConversation(this.model, new ArrayList<>(List.of(Message.user(userMessage))), 0.7, 512);
+    }
 
-        var req = java.util.Map.of(
+    /** Core: send history, append assistant reply, and return the UPDATED conversation list. */
+    @SuppressWarnings("unchecked")
+    public List<Message> chatReturnConversation(String model,
+                                                List<Message> history,
+                                                double temperature,
+                                                int maxTokens) {
+
+        var req = Map.of(
                 "model", model,
-                "messages", messages,
+                "messages", history,            // send the whole conversation so far
                 "temperature", temperature,
                 "max_tokens", maxTokens,
                 "stream", false
         );
 
-        var resp = http.post()
+        var body = (Map<String, Object>) http.post()
                 .uri("/chat/completions")
                 .bodyValue(req)
                 .retrieve()
-                .toEntity(java.util.Map.class)
-                .block(java.time.Duration.ofSeconds(60));
+                .bodyToMono(Map.class)
+                .block(Duration.ofSeconds(60));
 
-        if (resp == null || !resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
-            throw new IllegalStateException("DeepInfra call failed: " + (resp == null ? "no response" : resp.getStatusCode()));
-        }
+        if (body == null) throw new IllegalStateException("DeepInfra call failed: null body");
 
-        var body = (java.util.Map<String, Object>) resp.getBody();
-        var choices = (java.util.List<java.util.Map<String, Object>>) body.get("choices");
-        if (choices == null || choices.isEmpty()) return "";
+        var choices = (List<Map<String, Object>>) body.get("choices");
+        if (choices == null || choices.isEmpty())
+            throw new IllegalStateException("DeepInfra call failed: no choices in response");
 
-        var message = (java.util.Map<String, Object>) choices.get(0).get("message");
-        return message == null ? "" : String.valueOf(message.getOrDefault("content", ""));
+        var msgMap = (Map<String, Object>) choices.get(0).get("message");
+        if (msgMap == null)
+            throw new IllegalStateException("DeepInfra call failed: missing message object");
+
+        var role = String.valueOf(msgMap.getOrDefault("role", "assistant"));
+        var content = String.valueOf(msgMap.getOrDefault("content", ""));
+
+        // Append assistant reply to the provided history and return it
+        var updated = new ArrayList<>(history);
+        updated.add(new Message(role, content));
+        return updated;
     }
-
 }

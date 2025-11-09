@@ -1,5 +1,5 @@
 // src/main/java/at/fhtw/society/backend/player/PlayerController.java
-package at.fhtw.society.backend.player;
+package at.fhtw.society.backend.player.controller;
 
 import at.fhtw.society.backend.player.dto.RegisterRequest;
 import at.fhtw.society.backend.player.service.RegistrationService;
@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/players")
@@ -24,7 +25,7 @@ public class RegistrationController {
     @PostMapping("/gamemaster/register")
     public ResponseEntity<Object> registerGamemaster(@Valid @RequestBody RegisterRequest req) {
         try {
-            long id = registrationService.registerGamemaster(req.username());
+            UUID id = registrationService.registerGamemaster(req.username());
             return ResponseEntity
                     .created(URI.create("/api/players/gamemaster/" + id))
                     .body(Map.of(
@@ -42,7 +43,7 @@ public class RegistrationController {
     @PostMapping("/register")
     public ResponseEntity<Object> registerPlayer(@Valid @RequestBody RegisterRequest req) {
         try {
-            long id = registrationService.registerPlayer(req.username());
+            UUID id = registrationService.registerPlayer(req.username());
             return ResponseEntity
                     .created(URI.create("/api/players/player/" + id))
                     .body(Map.of(

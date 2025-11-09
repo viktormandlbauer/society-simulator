@@ -1,5 +1,6 @@
 package at.fhtw.society.backend.player;
 
+import at.fhtw.society.backend.player.controller.RegistrationController;
 import at.fhtw.society.backend.player.dto.RegisterRequest;
 import at.fhtw.society.backend.player.service.RegistrationService;
 import com.fasterxml.jackson.databind.ObjectMapper;

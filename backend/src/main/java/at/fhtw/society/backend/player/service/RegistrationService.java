@@ -1,29 +1,31 @@
 // java
 package at.fhtw.society.backend.player.service;
 
-import at.fhtw.society.backend.player.repo.GameMasterRepository;
+import at.fhtw.society.backend.player.repo.GamemasterRepository;
 import at.fhtw.society.backend.player.repo.PlayerRepository;
 import at.fhtw.society.backend.player.repo.UserRepository;
-import at.fhtw.society.backend.player.entity.GameMaster;
+import at.fhtw.society.backend.player.entity.Gamemaster;
 import at.fhtw.society.backend.player.entity.Player;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class RegistrationService {
 
     private final UserRepository userRepo;
     private final PlayerRepository playerRepo;
-    private final GameMasterRepository gmRepo;
+    private final GamemasterRepository gmRepo;
 
-    public RegistrationService(UserRepository userRepo, PlayerRepository playerRepo, GameMasterRepository gmRepo) {
+    public RegistrationService(UserRepository userRepo, PlayerRepository playerRepo, GamemasterRepository gmRepo) {
         this.userRepo = userRepo;
         this.playerRepo = playerRepo;
         this.gmRepo = gmRepo;
     }
 
     @Transactional
-    public long registerPlayer(String username) {
+    public UUID registerPlayer(String username) {
         ensureUsernameIsFree(username);
         Player p = new Player();
         p.setUsername(username);
@@ -32,11 +34,11 @@ public class RegistrationService {
     }
 
     @Transactional
-    public long registerGamemaster(String username) {
+    public UUID registerGamemaster(String username) {
         ensureUsernameIsFree(username);
-        GameMaster gm = new GameMaster();
+        Gamemaster gm = new Gamemaster();
         gm.setUsername(username);
-        GameMaster saved = gmRepo.save(gm);
+        Gamemaster saved = gmRepo.save(gm);
         return saved.getId();
     }
 

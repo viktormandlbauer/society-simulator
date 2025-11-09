@@ -1,37 +1,28 @@
 // java
 package at.fhtw.society.backend.player.entity;
 
-import at.fhtw.society.backend.game.model.GamePlayer;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import at.fhtw.society.backend.game.entity.Game;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "player")
+@Getter @Setter @NoArgsConstructor
 public class Player extends User {
-    public void setId(Long id) { super.setId(id); } // enable manual PK set from service
 
-    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<GamePlayer> gamePlayers = new HashSet<>();
-
-    public Set<GamePlayer> getGamePlayers() {
-        return gamePlayers;
-    }
-
-    public void setGamePlayers(Set<GamePlayer> gamePlayers) {
-        this.gamePlayers = gamePlayers;
-    }
-
-    public void addGamePlayer(GamePlayer gp) {
-        gamePlayers.add(gp);
-        gp.setPlayer(this);
-    }
-
-    public void removeGamePlayer(GamePlayer gp) {
-        gamePlayers.remove(gp);
-        gp.setPlayer(null);
-    }
+    @ManyToMany
+    @JoinTable
+    (
+        name = "game_players",
+        joinColumns = @JoinColumn(name = "player_id"),
+        inverseJoinColumns = @JoinColumn(name = "game_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"game_id", "player_id"})
+    )
+    private Set<Game> games = new HashSet<>();
 }

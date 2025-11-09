@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/games")
@@ -27,7 +28,7 @@ public class GameController {
     public ResponseEntity<Object> createGame(@RequestBody CreateGameDto createGameDto) {
         try {
 
-            long gameId = this.gameService.createGame(createGameDto);
+            UUID gameId = this.gameService.createGame(createGameDto);
 
             return ResponseEntity.ok(Map.of(
                     "status", "success",
@@ -37,6 +38,23 @@ public class GameController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "status", "error",
                     "message", "Failed to create game: " + e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/start/{gameId}")
+    public ResponseEntity<Object> startGame(@PathVariable UUID gameId) {
+        try {
+
+            this.gameService.startGame(gameId);
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "data", "Successfully started game with id: " + gameId
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "status", "error",
+                    "message", "Failed to start game with id: " + e.getMessage()
             ));
         }
     }
