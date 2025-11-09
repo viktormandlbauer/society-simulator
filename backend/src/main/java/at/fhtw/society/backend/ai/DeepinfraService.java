@@ -24,24 +24,18 @@ public class DeepinfraService {
         this.model = Objects.requireNonNull(props.getModel(), "API model definition is required");
     }
 
-    public record Message(String role, String content) {
-        public static Message system(String c)    { return new Message("system", c); }
-        public static Message user(String c)      { return new Message("user", c); }
-        public static Message assistant(String c) { return new Message("assistant", c); }
-    }
-
-    public List<Message> initConversation(Game game) {
-        String system_context = "You are the AI Game Master for a turn-based social game.\n" +
-                "Follow the rules strictly and keep responses concise, actionable, and on-theme.\n\n" +
-                "Theme: " + game.getTheme() + '\n' +
-                "Max rounds: " + String.valueOf(game.getMaxrounds()) + '\n';
-
-        return chatReturnConversation(this.model, new ArrayList<>(List.of(Message.system(system_context))), 0.7, 512);
+    /** Start a conversation with a system prompt and return the whole conversation (system + assistant). */
+    public List<Message> initConversation(String systemContext) {
+        List<Message> history = new ArrayList<>();
+        history.add(new Message("system", systemContext));
+        return chatReturnConversation(this.model, history, 0.7, 512);
     }
 
     /** Convenience: start a convo with a single user message and get back the conversation (user + assistant). */
     public List<Message> chatReturnConversation(String userMessage) {
-        return chatReturnConversation(this.model, new ArrayList<>(List.of(Message.user(userMessage))), 0.7, 512);
+        List<Message> history = new ArrayList<>();
+        history.add(new Message("user", userMessage));
+        return chatReturnConversation(this.model, history, 0.7, 512);
     }
 
     /** Core: send history, append assistant reply, and return the UPDATED conversation list. */
@@ -51,37 +45,63 @@ public class DeepinfraService {
                                                 double temperature,
                                                 int maxTokens) {
 
-        var req = Map.of(
+        Map<String, Object> req = Map.of(
                 "model", model,
-                "messages", history,            // send the whole conversation so far
+                "messages", history,    // uses your Lombok POJO (role/content getters)
                 "temperature", temperature,
                 "max_tokens", maxTokens,
                 "stream", false
         );
 
-        var body = (Map<String, Object>) http.post()
+        Map<String, Object> body = (Map<String, Object>) http.post()
                 .uri("/chat/completions")
                 .bodyValue(req)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block(Duration.ofSeconds(60));
 
-        if (body == null) throw new IllegalStateException("DeepInfra call failed: null body");
+        if (body == null) {
+            throw new IllegalStateException("DeepInfra call failed: null body");
+        }
 
-        var choices = (List<Map<String, Object>>) body.get("choices");
-        if (choices == null || choices.isEmpty())
+        List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
+        if (choices == null || choices.isEmpty()) {
             throw new IllegalStateException("DeepInfra call failed: no choices in response");
+        }
 
-        var msgMap = (Map<String, Object>) choices.get(0).get("message");
-        if (msgMap == null)
+        Map<String, Object> msgMap = (Map<String, Object>) choices.get(0).get("message");
+        if (msgMap == null) {
             throw new IllegalStateException("DeepInfra call failed: missing message object");
+        }
 
-        var role = String.valueOf(msgMap.getOrDefault("role", "assistant"));
-        var content = String.valueOf(msgMap.getOrDefault("content", ""));
+        String role = String.valueOf(msgMap.getOrDefault("role", "assistant"));
+        String content = String.valueOf(msgMap.getOrDefault("content", ""));
 
-        // Append assistant reply to the provided history and return it
-        var updated = new ArrayList<>(history);
+        List<Message> updated = new ArrayList<>(history);
         updated.add(new Message(role, content));
+        return updated;
+    }
+
+    /* ===========================
+       chatConversion conveniences
+       =========================== */
+
+    /** Continue a chat given the full history (messages list). */
+    public List<Message> chatConversion(List<Message> history) {
+        return chatReturnConversation(this.model, new ArrayList<>(history), 0.7, 512);
+    }
+
+    /** Continue a chat using the conversation stored in a Game entity. */
+    public List<Message> chatConversion(Game game) {
+        List<Message> history = game.getConversationList(); // expects the entity helper you added
+        List<Message> updated = chatReturnConversation(this.model, new ArrayList<>(history), 0.7, 512);
+
+        // Persist back into the jsonb map
+        if (game.getConversation() == null) {
+            game.setConversation(new HashMap<>());
+        }
+        game.getConversation().put("messages", updated);
+
         return updated;
     }
 }

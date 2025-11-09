@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface GamemasterRepository extends JpaRepository<Gamemaster, Long> {
     Gamemaster findById(UUID gamemasterId);
+    Gamemaster findByUsername(String username);
 }

@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/players")
+@RequestMapping("/api/register")
 public class RegistrationController {
 
     private final RegistrationService registrationService;
@@ -22,7 +22,7 @@ public class RegistrationController {
         this.registrationService = registrationService;
     }
 
-    @PostMapping("/gamemaster/register")
+    @PostMapping("/gamemaster")
     public ResponseEntity<Object> registerGamemaster(@Valid @RequestBody RegisterRequest req) {
         try {
             UUID id = registrationService.registerGamemaster(req.username());
@@ -40,7 +40,7 @@ public class RegistrationController {
         }
     }
 
-    @PostMapping("/register")
+    @PostMapping("/player")
     public ResponseEntity<Object> registerPlayer(@Valid @RequestBody RegisterRequest req) {
         try {
             UUID id = registrationService.registerPlayer(req.username());
