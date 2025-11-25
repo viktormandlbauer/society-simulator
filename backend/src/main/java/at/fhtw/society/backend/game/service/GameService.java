@@ -56,7 +56,7 @@ public class GameService {
 
         String systemContext = "You are the AI Game Master for a turn-based social game.\n" +
                 "Create dilemma questions that should be in the format with 1) Option, 2) Option, 3) Option, 4) Option.\n\n" +
-                "Theme: " + game.getTheme().getTheme() + '\n' +
+                "Dilemma Theme: " + game.getTheme().getTheme() + '\n' +
                 "Max rounds: " + String.valueOf(game.getMaxrounds()) + '\n';
 
         conversation.put("messages", this.deepinfraService.initConversation(systemContext));
@@ -74,7 +74,7 @@ public class GameService {
 
         List<Message> messages =  game.getConversationList();
         
-        Message newDilemmaPrompt = new Message("user", "Create a dilemma in the given context with 2 choices");
+        Message newDilemmaPrompt = new Message("user", "Create a dilemma for the given context with 2 choices");
         messages.add(newDilemmaPrompt);
 
         List<Message> newMessages = this.deepinfraService.chatConversion(messages);
