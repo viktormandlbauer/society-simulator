@@ -14,7 +14,7 @@ export default function Home() {
             <p>Welcome to Society Simulator!</p>
             <NesButton variant="success" onEnter={handleEnter} style={{ marginRight: 10}}>Enter</NesButton>
             <NesInput placeholder="Username" style={{ marginRight: 10}} />
-            <AvatarIcon avatarId="blue" size="large" />
+            <AvatarIcon avatarId="black" size="large" />
         </div>
     );
 
