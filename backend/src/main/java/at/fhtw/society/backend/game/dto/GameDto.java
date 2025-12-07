@@ -1,15 +1,25 @@
 package at.fhtw.society.backend.game.dto;
 
+import at.fhtw.society.backend.player.entity.Gamemaster;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter @Setter
-public class GamePreviewDto {
-    public String theme;
-    public String status;
-    public int currentPlayerCount;
-    public int maxPlayerCount;
-    public int currentRound;
-    public int maxRounds;
-    public String gamemaster;
+public class GameDto {
+
+    private UUID gamemasterId;
+    private String gamemasterUsername;
+
+    private UUID themeId;
+    private String themeName;
+
+    private String status;
+    private int currentPlayerCount;
+    private int maxPlayerCount;
+    private int currentRound;
+    private int maxRounds;
+
+
 }

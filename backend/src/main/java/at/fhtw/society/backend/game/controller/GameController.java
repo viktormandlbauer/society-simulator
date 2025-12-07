@@ -25,7 +25,22 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @PostMapping("/create")
+    @GetMapping
+    public ResponseEntity<Object> getGames() {
+        try {
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "data", this.gameService.getAllGames()
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "status", "error",
+                    "message", "Failed to fetch games: " + e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping
     public ResponseEntity<Object> createGame(@RequestBody CreateGameDto createGameDto) {
         try {
 

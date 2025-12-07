@@ -2,11 +2,13 @@ package at.fhtw.society.backend.game.service;
 
 import at.fhtw.society.backend.ai.DeepinfraService;
 import at.fhtw.society.backend.ai.Message;
+import at.fhtw.society.backend.game.dto.GameDto;
 import at.fhtw.society.backend.game.entity.Theme;
 import at.fhtw.society.backend.game.repo.GameRepository;
 import at.fhtw.society.backend.game.dto.GameStatus;
 import at.fhtw.society.backend.game.entity.Game;
 import at.fhtw.society.backend.game.repo.ThemeRepository;
+import at.fhtw.society.backend.game.mappers.GameMapper;
 import at.fhtw.society.backend.player.entity.Gamemaster;
 import at.fhtw.society.backend.player.repo.GamemasterRepository;
 import org.slf4j.Logger;
@@ -26,17 +28,20 @@ public class GameService {
     private final ThemeRepository themeRepository;
     private final DeepinfraService deepinfraService;
 
-    public GameService(GameRepository gameRepository, GamemasterRepository gamemasterRepository, ThemeRepository themeRepository, DeepinfraService deepinfraService) {
+    private final GameMapper gameMapper;
+
+    public GameService(GameRepository gameRepository, GamemasterRepository gamemasterRepository, ThemeRepository themeRepository, DeepinfraService deepinfraService, GameMapper gameMapper) {
         this.gameRepository = gameRepository;
         this.gamemasterRepository = gamemasterRepository;
         this.themeRepository = themeRepository;
         this.deepinfraService = deepinfraService;
+        this.gameMapper = gameMapper;
     }
 
     public UUID createGame(CreateGameDto createGameDto) {
 
         Theme theme = themeRepository.findByTheme(createGameDto.getThemeName());
-        Gamemaster gm = this.gamemasterRepository.findByUsername(createGameDto.getUsername());
+        Gamemaster gm = this.gamemasterRepository.findByUsername(createGameDto.getGamemaster());
         Game newGame = new Game(gm, theme, createGameDto.getMaxRounds(), createGameDto.getMaxRounds());
 
         logger.info("Creating new game {}", newGame);
@@ -57,7 +62,7 @@ public class GameService {
         String systemContext = "You are the AI Game Master for a turn-based social game.\n" +
                 "Create dilemma questions that should be in the format with 1) Option, 2) Option, 3) Option, 4) Option.\n\n" +
                 "Dilemma Theme: " + game.getTheme().getTheme() + '\n' +
-                "Max rounds: " + String.valueOf(game.getMaxrounds()) + '\n';
+                "Max rounds: " + game.getMaxrounds() + '\n';
 
         conversation.put("messages", this.deepinfraService.initConversation(systemContext));
         game.setConversation(conversation);
@@ -83,5 +88,11 @@ public class GameService {
 
         return newMessages.get(messages.size()).getContent();
 
+    }
+
+    public List<GameDto> getAllGames() {
+
+        return null;
+        //return this.gameMapper.toDtos(this.gameRepository.findAll());
     }
 }

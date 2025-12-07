@@ -1,7 +1,7 @@
 package at.fhtw.society.backend.player.controller;
 
-import at.fhtw.society.backend.player.dto.RegisterRequest;
-import at.fhtw.society.backend.player.service.RegistrationService;
+import at.fhtw.society.backend.player.dto.AuthRequest;
+import at.fhtw.society.backend.player.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,19 +12,37 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/register")
-public class RegistrationController {
+@RequestMapping("/api/auth")
+public class AuthController {
 
-    private final RegistrationService registrationService;
+    private final AuthService authService;
 
-    public RegistrationController(RegistrationService registrationService) {
-        this.registrationService = registrationService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
-    @PostMapping("/gamemaster")
-    public ResponseEntity<Object> registerGamemaster(@Valid @RequestBody RegisterRequest req) {
+    @PostMapping("/register/gamemaster")
+    public ResponseEntity<Object> registerGamemaster(@Valid @RequestBody AuthRequest req) {
         try {
-            UUID id = registrationService.registerGamemaster(req.username());
+            UUID id = authService.registerGamemaster(req.username());
+            return ResponseEntity
+                    .created(URI.create("/api/players/gamemaster/" + id))
+                    .body(Map.of(
+                            "status", "success",
+                            "data", Map.of("id", id, "role", "GAMEMASTER")
+                    ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "status", "error",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/login/gamemaster")
+    public ResponseEntity<Object> loginGamemaster(@Valid @RequestBody AuthRequest req) {
+        try {
+            UUID id = authService.loginGamemaster(req.username());
             return ResponseEntity
                     .created(URI.create("/api/players/gamemaster/" + id))
                     .body(Map.of(
@@ -40,9 +58,9 @@ public class RegistrationController {
     }
 
     @PostMapping("/player")
-    public ResponseEntity<Object> registerPlayer(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<Object> registerPlayer(@Valid @RequestBody AuthRequest req) {
         try {
-            UUID id = registrationService.registerPlayer(req.username());
+            UUID id = authService.registerPlayer(req.username());
             return ResponseEntity
                     .created(URI.create("/api/players/player/" + id))
                     .body(Map.of(

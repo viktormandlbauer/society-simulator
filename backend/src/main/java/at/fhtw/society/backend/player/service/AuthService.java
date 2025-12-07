@@ -12,19 +12,18 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class RegistrationService {
+public class AuthService {
 
     private final UserRepository userRepo;
     private final PlayerRepository playerRepo;
     private final GamemasterRepository gmRepo;
 
-    public RegistrationService(UserRepository userRepo, PlayerRepository playerRepo, GamemasterRepository gmRepo) {
+    public AuthService(UserRepository userRepo, PlayerRepository playerRepo, GamemasterRepository gmRepo) {
         this.userRepo = userRepo;
         this.playerRepo = playerRepo;
         this.gmRepo = gmRepo;
     }
 
-    @Transactional
     public UUID registerPlayer(String username) {
         ensureUsernameIsFree(username);
         Player p = new Player();
@@ -33,13 +32,17 @@ public class RegistrationService {
         return saved.getId();
     }
 
-    @Transactional
     public UUID registerGamemaster(String username) {
         ensureUsernameIsFree(username);
         Gamemaster gm = new Gamemaster();
         gm.setUsername(username);
         Gamemaster saved = gmRepo.save(gm);
         return saved.getId();
+    }
+
+    public UUID loginGamemaster(String username) {
+        Gamemaster gm = gmRepo.findByUsername(username);
+        return gm.getId();
     }
 
     private void ensureUsernameIsFree(String username) {
