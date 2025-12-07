@@ -1,4 +1,3 @@
-// src/main/java/at/fhtw/society/backend/player/PlayerController.java
 package at.fhtw.society.backend.player.controller;
 
 import at.fhtw.society.backend.player.dto.RegisterRequest;
