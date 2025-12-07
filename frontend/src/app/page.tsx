@@ -1,39 +1,65 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import AvatarSelection, { AvatarOption } from '../components/AvatarSelection';
-import Chat from '../components/Chat';
-import ConnectedUsers from '../components/ConnectedUsers';
-
-const GAMESTATE_SOCKET_PATH = process.env.GAMESTATE_SOCKET_PATH || "/";
+import {NesButton} from "@/components/ui/NesButton";
+import {NesInput} from "@/components/ui/NesInput";
+import {useState} from "react";
+import {AVATARS} from "@/lib/avatars";
+import {AvatarPreview} from "@/components/ui/AvatarPreview";
 
 export default function Home() {
-  const [confirmedAvatar, setConfirmedAvatar] = useState<AvatarOption | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const currentAvatar = AVATARS[selectedIndex];
 
-  return (
-    <main className="mx-auto flex w-full flex-col items-center gap-6 p-6">
-      <h1 className="text-2xl">Society Simulator</h1>
+    const handleEnter = () => {
+        // TODO: Implement enter button functionality
+    }
 
-      {confirmedAvatar ? (
-        <div className="flex w-full max-w-4xl flex-col items-center gap-4">
-          <Chat
-            className="w-full"
-            socketUrl={GAMESTATE_SOCKET_PATH}
-            avatarClass={confirmedAvatar.iconClass}
-          />
-          <ConnectedUsers className="w-full" socketUrl={GAMESTATE_SOCKET_PATH} />
+    function handleNextAvatar() {
+        console.log(selectedIndex);
+        setSelectedIndex((prevIndex) => (prevIndex + 1) % AVATARS.length);
+    }
+
+    function handlePreviousAvatar() {
+        console.log(selectedIndex);
+        setSelectedIndex((prevIndex) => (prevIndex - 1 + AVATARS.length) % AVATARS.length);
+    }
+
+    return (
+        <div className="nes-container with-title is-rounded is-dark flex flex-col items-center">
+            <p className="title">Society Simulator</p>
+            <p>Welcome to Society Simulator!</p>
+
+            <div className="mt-6 flex flex-col gap-6 items-center">
+                {/* Avatar Selection */}
+                <div className="flex items-center gap-4">
+                    <NesButton type="button" onClick={handlePreviousAvatar} aria-label="Previous Avatar">
+                        «
+                    </NesButton>
+
+                    <AvatarPreview id={currentAvatar.id} />
+
+                    <NesButton type="button" onClick={handleNextAvatar} aria-label="Next Avatar">
+                        »
+                    </NesButton>
+                </div>
+
+                {/* Enter + Name Input */}
+                <div className="flex items-center gap-4">
+                    <label htmlFor="player-name" className="sr-only">
+                        Player name
+                    </label>
+                    <NesInput
+                        placeholder="Enter your name..."
+                        className="w-full is-dark"
+                    />
+                </div>
+                <div className="flex items-center gap-4">
+                    <NesButton variant="success" type="button">
+                        Enter
+                    </NesButton>
+                </div>
+            </div>
         </div>
-      ) : (
-        <>
-          <AvatarSelection
-            className="w-full max-w-md"
-            onConfirm={(avatar) => setConfirmedAvatar(avatar)}
-          />
-          <section className="nes-container is-dark with-title w-full max-w-md text-center mx-auto">
-            <p className="text-sm">Pick an avatar to start chatting.</p>
-          </section>
-        </>
-      )}
-    </main>
-  );
+    );
+
 }

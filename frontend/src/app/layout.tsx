@@ -1,13 +1,29 @@
-import "./globals.css";
-import "nes.css/css/nes.min.css";
-import { Press_Start_2P } from "next/font/google";
+import type {Metadata} from "next";
+import "../styles/globals.css";
+import {Press_Start_2P} from "next/font/google";
+import {ReactNode} from "react";
 
-const pressStart = Press_Start_2P({ weight: "400", subsets: ["latin"] });
+const pressStart2P = Press_Start_2P({
+    subsets: ["latin"],
+    weight: ["400"],
+});
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" className={pressStart.className}>
-      <body className="bg-gray-100 min-h-screen">{children}</body>
-    </html>
-  );
+export const metadata: Metadata = {
+    title: "Society Simulator",
+    description: "A society simulation game built with Next.js and Tailwind CSS",
+};
+
+export default function RootLayout({children,}: { children: ReactNode }) {
+
+    return (
+        <html lang="en">
+        <body
+            className={`${pressStart2P.className} min-h-screen bg-slate-900 text-slate-100 flex justify-center items-center `}
+        >
+        <main className="w-full max-w-5xl p-4 md:p-8">
+            {children}
+        </main>
+        </body>
+        </html>
+    )
 }
