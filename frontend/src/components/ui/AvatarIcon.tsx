@@ -1,4 +1,4 @@
-import {getAvatarConfigById, type AvatarId} from "@/lib/Avatars";
+import {getAvatarConfigById, type AvatarId} from "@/lib/avatars";
 
 export type AvatarSize = "small" | "medium" | "large";
 
@@ -16,7 +16,7 @@ export function AvatarIcon({
 }: AvatarIconProps) {
     const avatar = getAvatarConfigById(avatarId);
 
-    const sizeClass = size === "small" ? "scale-75" : size === "large" ? "scale-125" : "scale-100"
+    const sizeClass = size === "small" ? "scale-75" : size === "large" ? "scale-200" : "scale-100"
 
     return (
         <img

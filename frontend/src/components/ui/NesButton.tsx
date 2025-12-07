@@ -11,7 +11,7 @@ export interface NesButtonProps
     extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: NesButtonVariant;
     children: ReactNode;
-    onEnter?: () => void;
+    onClick?: () => void;
     // onEnter function prop for handling enter button click
 }
 
@@ -20,7 +20,7 @@ export interface NesButtonProps
 export function NesButton({
     variant = "primary",
     className = "",
-    onEnter = () => {},
+    onClick = () => {},
     children,
     ...props
 }: NesButtonProps) {
@@ -31,15 +31,15 @@ export function NesButton({
         variant === "error" ? "is-error" :
         variant === "disabled" ? "is-disabled" : "";
 
-    const handleEnter = () => {
+    const handleClick = () => {
         console.log("Enter button clicked");
-        onEnter();
+        onClick();
     }
     return (
         <button
             {...props}
             className={`nes-btn ${variantClass} ${className}`.trim()}
-            onClick={handleEnter}
+            onClick={handleClick}
             >
             {children}
         </button>
