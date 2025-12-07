@@ -1,6 +1,7 @@
 import type {ButtonHTMLAttributes, ReactNode} from "react";
 export type NesButtonVariant =
     | "primary"
+    | "normal"
     | "success"
     | "warning"
     | "error"
@@ -26,6 +27,7 @@ export function NesButton({
 }: NesButtonProps) {
     const variantClass =
         variant === "primary" ? "is-primary" :
+        variant === "normal" ? "is-normal" :
         variant === "success" ? "is-success" :
         variant === "warning" ? "is-warning" :
         variant === "error" ? "is-error" :
