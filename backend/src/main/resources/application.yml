@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: "backend"
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+deepinfra:
+  url: ${DEEPINFRA_API_URL}
+  key: ${DEEPINFRA_API_KEY}
+  model: ${DEEPINFRA_API_MODEL}
+
+
+
+# Logging/debugging configuration
+logging.level.org.flywaydb: INFO
+
