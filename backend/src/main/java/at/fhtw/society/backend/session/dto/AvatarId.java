@@ -1,5 +1,6 @@
 package at.fhtw.society.backend.session.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /*
@@ -34,6 +35,11 @@ public enum AvatarId {
         return id;
     }
 
+    /**
+     * Allows converting a JSON string like "blue" back into the enum AvatarId.BLUE.
+     * If the value is unknown, an IllegalArgumentException is thrown.
+     */
+    @JsonCreator
     public static AvatarId fromValue(String value) {
         if (value == null || value.isEmpty()) {
             throw new IllegalArgumentException("avatarId cannot be null or empty");
