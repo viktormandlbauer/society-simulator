@@ -1,5 +1,6 @@
 package at.fhtw.society.backend.session.service;
 
+import at.fhtw.society.backend.security.jwt.JwtService;
 import at.fhtw.society.backend.session.exception.InvalidSessionRequestException;
 import at.fhtw.society.backend.session.dto.GuestSessionRequestDto;
 import at.fhtw.society.backend.session.dto.GuestSessionResponseDto;
@@ -14,6 +15,14 @@ import java.util.UUID;
  */
 @Service
 public class SessionService {
+
+    private static final String ROLE_GUEST = "GUEST"; // TODO: unify with ROLE_* constants
+
+    private final JwtService jwtService;
+
+    public SessionService(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
 
     /**
      * Creates a new guest session based on the provided request data.
@@ -31,19 +40,23 @@ public class SessionService {
 
         UUID playerId = UUID.randomUUID();
 
-        // TODO: Implement JWT token generation logic here
-        // Token should include: sub=playerId, claims(name, avatarId, role), issuedAt, expiration
+        JwtService.IssuedToken issuedToken = jwtService.issuePlayerToken(
+                playerId,
+                normalizedName,
+                request.getAvatarId(),
+                ROLE_GUEST
+        );
 
-        // For now, we explicitly fail fast to indicate this is not yet implemented
-        throw new UnsupportedOperationException("JWT token generation not yet implemented.");
+        return GuestSessionResponseDto.builder()
+                .playerId(playerId.toString())
+                .name(normalizedName)
+                .avatarId(request.getAvatarId())
+                .token(issuedToken.token())
+                .build();
 
-        // When JWT is implemented, return the response DTO like this:
-//        return GuestSessionResponseDto.builder()
-//                .playerId(playerId.toString())
-//                .name(normalizedName)
-//                .avatarId(request.getAvatarId())
-//                .token(token)
-//                .build();
+        // TODO:
+        // Persist player: store playerId, normalizedName, avatarId, createdAt in the database
+        // Login: createUserSession(LoginRequestDto) -> role "USER", subject = userId etc.
     }
 
     /**
