@@ -1,5 +1,5 @@
-import { StartPage } from "@/features/pages/StartPage";
+import { RootShell } from "@/features/shell/RootShell";
 
 export default function Page() {
-    return <StartPage />;
+    return <RootShell />;
 }
