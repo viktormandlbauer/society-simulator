@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.Instant;
+
 @Getter
 @Builder
 @AllArgsConstructor
@@ -28,4 +30,9 @@ public class GuestSessionResponseDto {
      * The signed JWT that represents this player identity.
      */
     private final String token;
+
+    /**
+     * The expiration time of the issued token.
+     */
+    private final Instant expiresAt;
 }

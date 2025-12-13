@@ -52,6 +52,7 @@ public class SessionService {
                 .name(normalizedName)
                 .avatarId(request.getAvatarId())
                 .token(issuedToken.token())
+                .expiresAt(issuedToken.expiresAt())
                 .build();
 
         // TODO:
