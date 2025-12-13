@@ -1,4 +1,4 @@
-package at.fhtw.society.backend.common.exception;
+package at.fhtw.society.backend.session.exception;
 
 import at.fhtw.society.backend.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
