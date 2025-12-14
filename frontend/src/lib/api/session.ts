@@ -12,6 +12,7 @@ export type GuestSessionResponse = {
     avatarId: AvatarId;
     token: string;
     expiresAt: string;
+    role: "GUEST" | "PLAYER" | "GAMEMASTER";
 };
 
 export async function createGuestSession(req: GuestSessionRequest): Promise<GuestSessionResponse> {

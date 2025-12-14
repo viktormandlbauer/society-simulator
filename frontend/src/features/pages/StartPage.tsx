@@ -52,15 +52,14 @@ export function StartPage() {
                 avatarId: currentAvatar.id,
             });
 
-            // Persist session in a single global source of truth
-            // TODO: role is currently not returned by the backend, we set it explicitly
+            // Persist sessiongi
             setSession({
                 playerId: res.playerId,
                 name: res.name,
                 avatarId: res.avatarId,
                 token: res.token,
                 expiresAt: res.expiresAt,
-                role: "GUEST",
+                role: res.role,
             });
 
             console.log("Guest session created: ", res);

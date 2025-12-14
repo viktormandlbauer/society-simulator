@@ -10,7 +10,7 @@ export function LobbyListPage() {
         <img
             src={avatarConfig.imageUrl}
             alt={avatarConfig.label}
-            className="inline-block w-6 h-6 ml-2 align-middle"
+            className="inline-block w-10 h-10 ml-2 align-middle"
         />
     ) : null;
 
@@ -20,9 +20,9 @@ export function LobbyListPage() {
             <p className="title">Lobby List</p>
 
             <div className="flex flex-col gap-4">
-                <div>
-                    Logged in as: {avatar}{session?.name}
-                </div>
+                <span>
+                    Logged in as: {session?.name} {avatar}
+                </span>
 
                 {/* Temporary: lets us test switching back to StartPage without refresh */}
                 <NesButton variant="warning" onClick={() => setSession(null)}>
