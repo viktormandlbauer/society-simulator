@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import "../styles/globals.css";
 import {Press_Start_2P} from "next/font/google";
 import {ReactNode} from "react";
+import {Providers} from "@/app/providers";
 
 const pressStart2P = Press_Start_2P({
     subsets: ["latin"],
@@ -20,9 +21,12 @@ export default function RootLayout({children,}: { children: ReactNode }) {
         <body
             className={`${pressStart2P.className} min-h-screen bg-slate-900 text-slate-100 flex justify-center items-center `}
         >
-        <main className="w-full max-w-5xl p-4 md:p-8">
-            {children}
-        </main>
+            <Providers>
+                <main className="w-full max-w-5xl p-4 md:p-8">
+                {children}
+                </main>
+            </Providers>
+
         </body>
         </html>
     )
