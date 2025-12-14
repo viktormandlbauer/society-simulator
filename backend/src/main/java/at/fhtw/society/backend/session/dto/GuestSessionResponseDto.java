@@ -35,4 +35,9 @@ public class GuestSessionResponseDto {
      * The expiration time of the issued token.
      */
     private final Instant expiresAt;
+
+    /**
+     * The role assigned to the player (e.g., "GUEST").
+     */
+    private final String role;
 }

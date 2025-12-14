@@ -53,6 +53,7 @@ public class SessionService {
                 .avatarId(request.getAvatarId())
                 .token(issuedToken.token())
                 .expiresAt(issuedToken.expiresAt())
+                .role(ROLE_GUEST)
                 .build();
 
         // TODO:
