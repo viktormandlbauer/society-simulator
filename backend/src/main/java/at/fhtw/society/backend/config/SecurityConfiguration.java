@@ -1,4 +1,4 @@
-package at.fhtw.society.backend.security;
+package at.fhtw.society.backend.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
