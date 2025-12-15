@@ -2,9 +2,9 @@ package at.fhtw.society.backend.game.entity;
 
 import at.fhtw.society.backend.ai.Message;
 import at.fhtw.society.backend.game.dto.GameStatus;
-import at.fhtw.society.backend.game.dto.CreateGameDto;
-import at.fhtw.society.backend.player.entity.Gamemaster;
-import at.fhtw.society.backend.player.entity.Player;
+import at.fhtw.society.backend.game.entity.Player;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,9 +13,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -40,33 +37,39 @@ public class Game {
     @JoinColumn(
             name = "gamemaster_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_game_gamemaster")
+            foreignKey = @ForeignKey(name = "fk_game_gamemaster_player")
     )
-    private Gamemaster gamemaster;
-
+    private Player gamemaster;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "theme_id",
-            nullable = true,
+            nullable = false,
             foreignKey = @ForeignKey(name = "fk_game_theme")
     )
     private Theme theme;
 
     @Column(name = "maxrounds", nullable = false)
-    private Integer maxrounds;
+    private Integer maxRounds;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "current_round_id",
+            foreignKey = @ForeignKey(name = "fk_game_current_round")
+    )
+    private Round currentRound;
 
     @Column(name = "maxplayers", nullable = false)
-    private Integer maxplayers;
+    private Integer maxPlayers;
 
-    @Column(name = "started_at", nullable = true)
+    @Column(name = "started_at")
     private OffsetDateTime startedAt;
 
-    @Column(name = "ended_at", nullable = true)
+    @Column(name = "ended_at")
     private OffsetDateTime endedAt;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
@@ -77,45 +80,40 @@ public class Game {
     @Column(name = "conversation", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> conversation = new HashMap<>();
 
-    public Game(Gamemaster gamemaster, Theme theme, Integer maxRounds, Integer maxPlayers) {
-        this.gamemaster = gamemaster;
+    @ManyToMany(mappedBy = "games")
+    private Set<Player> players = new HashSet<>();
+
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Round> rounds = new HashSet<>();
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public Game(Player gm, Theme theme, int maxRounds, int maxPlayers) {
+        this.gamemaster = gm;
         this.theme = theme;
-        this.maxrounds = maxRounds;
-        this.maxplayers = maxPlayers;
-        this.status = GameStatus.CREATED;
+        this.maxRounds = maxRounds;
+        this.maxPlayers = maxPlayers;
     }
 
     @PrePersist
     void prePersist() {
         if (status == null) status = GameStatus.CREATED;
+        if (conversation == null) conversation = new HashMap<>(Map.of("messages", List.of()));
     }
-
-    @ManyToMany(mappedBy = "games")
-    private Set<Player> players;
-
-
-    // add this field somewhere in the class (e.g., near other fields)
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public List<Message> getConversationList() {
         if (conversation == null) return List.of();
-
         Object raw = conversation.get("messages");
         if (raw == null) return List.of();
 
-        // Safely convert List<Map<...>> → List<Message>
-        List<Message> messages = OBJECT_MAPPER.convertValue(
-                raw, new TypeReference<List<Message>>() {}
-        );
+        List<Message> messages = OBJECT_MAPPER.convertValue(raw, new TypeReference<List<Message>>() {});
         return messages != null ? messages : List.of();
     }
 
     public void setConversationList(List<Message> messages) {
         if (messages == null || messages.isEmpty()) {
-            // store an empty messages array to keep JSON shape predictable
             this.conversation = new HashMap<>(Map.of("messages", List.of()));
         } else {
-            // assign a NEW map instance so Hibernate recognizes the mutation
             this.conversation = new HashMap<>(Map.of("messages", messages));
         }
     }
