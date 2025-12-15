@@ -1,6 +1,5 @@
 package at.fhtw.society.backend.game.dto;
 
-import at.fhtw.society.backend.player.entity.Gamemaster;
 import lombok.Getter;
 import lombok.Setter;
 

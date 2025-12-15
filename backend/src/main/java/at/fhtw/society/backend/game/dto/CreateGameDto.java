@@ -14,4 +14,5 @@ public class CreateGameDto {
     private String themeName;
     private int maxRounds;
     private int maxTurnTime;
+    private int maxPlayers;
 }
