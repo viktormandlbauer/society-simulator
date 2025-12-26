@@ -23,6 +23,12 @@ public class LobbyCommandService {
         this.lobbyMemberRepository = lobbyMemberRepository;
     }
 
+    /**
+     * Player leaves the lobby. If the player is the gamemaster, a new gamemaster is assigned.
+     * If the lobby becomes empty, it is deleted.
+     * @param lobbyId - ID of the lobby to leave
+     * @param playerId - ID of the player leaving the lobby
+     */
     @Transactional
     public void leaveLobby(UUID lobbyId, UUID playerId) {
         if (!lobbyRepository.existsById(lobbyId)) throw new LobbyNotFoundException(lobbyId);
