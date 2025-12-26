@@ -34,7 +34,7 @@ public class Lobby {
     @Column(nullable = false)
     private int maxRounds;
 
-    @Column(length = 20)
+    @Column(length = 255)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
@@ -43,6 +43,7 @@ public class Lobby {
     /**
      * Members are owned by the lobby. When a lobby is deleted, its members are also deleted.
      */
+    @Builder.Default
     @OneToMany(mappedBy = "lobby", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LobbyMember> members = new ArrayList<>();
 

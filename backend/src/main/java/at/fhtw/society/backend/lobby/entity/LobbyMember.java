@@ -16,7 +16,8 @@ import java.util.UUID;
 @Table(
         name = "lobby_members",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_lobby_member_lobby_player", columnNames = {"lobby_id", "player_id"})
+                @UniqueConstraint(name = "uq_lobby_member_lobby_player", columnNames = {"lobby_id", "player_id"}),
+                @UniqueConstraint(name = "uq_lobby_member_player", columnNames = {"player_id"})
         }
 )
 public class LobbyMember {
