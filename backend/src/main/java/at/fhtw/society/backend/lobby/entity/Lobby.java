@@ -48,7 +48,7 @@ public class Lobby {
     private List<LobbyMember> members = new ArrayList<>();
 
     @Transient
-    public boolean isHasPassword() {
+    public boolean hasPassword() {
         return passwordHash != null && !passwordHash.isBlank();
     }
 

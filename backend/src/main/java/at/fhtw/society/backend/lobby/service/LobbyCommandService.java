@@ -33,13 +33,13 @@ public class LobbyCommandService {
     public void leaveLobby(UUID lobbyId, UUID playerId) {
         if (!lobbyRepository.existsById(lobbyId)) throw new LobbyNotFoundException(lobbyId);
 
-        LobbyMember lobbyMember = lobbyMemberRepository.findByLobby_IdAndPlayerId(lobbyId, playerId)
+        LobbyMember leavingMember = lobbyMemberRepository.findByLobby_IdAndPlayerId(lobbyId, playerId)
                 .orElseThrow(() -> new LobbyMemberNotFoundException(lobbyId, playerId));
 
         // true if the leaving member is the game master
-        boolean wasGamemaster = lobbyMember.getRole() == LobbyRole.GAMEMASTER;
+        boolean wasGamemaster = leavingMember.getRole() == LobbyRole.GAMEMASTER;
 
-        lobbyMemberRepository.delete(lobbyMember);
+        lobbyMemberRepository.delete(leavingMember);
 
         boolean isLobbyEmpty = lobbyMemberRepository.countByLobby_Id(lobbyId) == 0L;
 
