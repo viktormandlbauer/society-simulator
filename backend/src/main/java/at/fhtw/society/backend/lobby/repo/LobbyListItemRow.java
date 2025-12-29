@@ -15,6 +15,7 @@ public interface LobbyListItemRow {
     String getName();
     UUID getThemeId();
     String getThemeName();
+    // Postgres returns count as long(bigint) by default
     long getPlayersCount();
     int getMaxPlayers();
     boolean getHasPassword();
