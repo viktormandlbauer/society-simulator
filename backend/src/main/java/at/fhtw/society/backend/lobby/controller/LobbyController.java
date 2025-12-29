@@ -56,4 +56,14 @@ public class LobbyController {
         LobbyViewDto view = lobbyCommandService.joinLobby(lobbyId, request, identity);
         return ResponseEntity.status(HttpStatus.OK).body(view);
     }
+
+    @PostMapping("/{lobbyId}/leave")
+    public ResponseEntity<Void> leaveLobby(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID lobbyId
+    ) {
+        var identity = jwtService.toPlayerIdentity(jwt);
+        lobbyCommandService.leaveLobby(lobbyId, identity.playerId());
+        return ResponseEntity.noContent().build();
+    }
 }
