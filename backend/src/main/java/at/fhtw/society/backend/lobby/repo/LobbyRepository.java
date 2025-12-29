@@ -1,10 +1,15 @@
 package at.fhtw.society.backend.lobby.repo;
 
 import at.fhtw.society.backend.lobby.entity.Lobby;
+import jakarta.persistence.Lob;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface LobbyRepository extends JpaRepository<Lobby, UUID> {
@@ -34,4 +39,19 @@ public interface LobbyRepository extends JpaRepository<Lobby, UUID> {
                     l.name ASC
             """)
     List<LobbyListItemRow> findLobbyList();
+
+    /**
+     * Fetches a Lobby entity by its ID with a pessimistic write lock to prevent
+     * multiple concurrent joins that could exceed the lobby's capacity.
+     * This method also eagerly loads the associated Theme and Members
+     * to ensure that all necessary data is available for operations that
+     * may modify the lobby or its members.
+     * @param lobbyId - the UUID of the lobby to fetch
+     * @return An Optional containing the Lobby entity if found, otherwise empty.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"theme", "members"})
+    @Query("SELECT l FROM Lobby l WHERE l.id = :lobbyId")
+    Optional<Lobby> findByIdForJoin(UUID lobbyId);
+
 }

@@ -1,6 +1,7 @@
 package at.fhtw.society.backend.lobby.controller;
 
 import at.fhtw.society.backend.lobby.dto.CreateLobbyRequestDto;
+import at.fhtw.society.backend.lobby.dto.JoinLobbyRequestDto;
 import at.fhtw.society.backend.lobby.dto.LobbyListItemDto;
 import at.fhtw.society.backend.lobby.dto.LobbyViewDto;
 import at.fhtw.society.backend.lobby.service.LobbyCommandService;
@@ -14,6 +15,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/lobbies")
@@ -42,5 +44,16 @@ public class LobbyController {
         var identity = jwtService.toPlayerIdentity(jwt);
         LobbyViewDto view = lobbyCommandService.createLobby(request, identity);
         return ResponseEntity.status(HttpStatus.CREATED).body(view);
+    }
+
+    @PostMapping("/{lobbyId}/join")
+    public ResponseEntity<LobbyViewDto> joinLobby(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID lobbyId,
+            @Valid @RequestBody(required = false) JoinLobbyRequestDto request
+    ) {
+        var identity = jwtService.toPlayerIdentity(jwt);
+        LobbyViewDto view = lobbyCommandService.joinLobby(lobbyId, request, identity);
+        return ResponseEntity.status(HttpStatus.OK).body(view);
     }
 }

@@ -3,15 +3,13 @@ package at.fhtw.society.backend.lobby.service;
 import at.fhtw.society.backend.game.entity.Theme;
 import at.fhtw.society.backend.game.repo.ThemeRepository;
 import at.fhtw.society.backend.lobby.dto.CreateLobbyRequestDto;
+import at.fhtw.society.backend.lobby.dto.JoinLobbyRequestDto;
 import at.fhtw.society.backend.lobby.dto.LobbyViewDto;
 import at.fhtw.society.backend.lobby.entity.Lobby;
 import at.fhtw.society.backend.lobby.entity.LobbyMember;
 import at.fhtw.society.backend.lobby.entity.LobbyRole;
 import at.fhtw.society.backend.lobby.entity.LobbyStatus;
-import at.fhtw.society.backend.lobby.exception.LobbyMemberNotFoundException;
-import at.fhtw.society.backend.lobby.exception.LobbyNotFoundException;
-import at.fhtw.society.backend.lobby.exception.PlayerAlreadyInLobbyException;
-import at.fhtw.society.backend.lobby.exception.ThemeNotFoundException;
+import at.fhtw.society.backend.lobby.exception.*;
 import at.fhtw.society.backend.lobby.mapper.LobbyViewMapper;
 import at.fhtw.society.backend.lobby.repo.LobbyMemberRepository;
 import at.fhtw.society.backend.lobby.repo.LobbyRepository;
@@ -20,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -91,6 +90,72 @@ public class LobbyCommandService {
         Lobby savedLobby = lobbyRepository.save(lobby);
 
         return lobbyViewMapper.toDto(savedLobby);
+    }
+
+    /**
+     * Player joins an existing lobby. Validations are performed to ensure the player can join.
+     * If successful, the updated lobby view is returned.
+     * If the player is already in the lobby, the current lobby view is returned.
+     * @param lobbyId - ID of the lobby to join
+     * @param joinLobbyRequestDto - DTO containing join parameters (password)
+     * @param identity - Identity of the joining player
+     * @return DTO representing the updated lobby view
+     */
+    @Transactional
+    public LobbyViewDto joinLobby(UUID lobbyId, JoinLobbyRequestDto joinLobbyRequestDto, JwtService.PlayerIdentity identity) {
+        // check if already in this lobby, if so, return current lobby view
+        if (lobbyMemberRepository.existsByLobby_IdAndPlayerId(lobbyId, identity.playerId())) {
+            Lobby lobby = lobbyRepository.findByIdForJoin(lobbyId)
+                    .orElseThrow(() -> new LobbyNotFoundException(lobbyId));
+            lobby.getMembers().sort(Comparator.comparing(LobbyMember::getJoinedAt));
+            return lobbyViewMapper.toDto(lobby);
+        }
+
+        // enforce one lobby at a time
+        if (lobbyMemberRepository.existsByPlayerId(identity.playerId())) {
+            throw new PlayerAlreadyInLobbyException(identity.playerId());
+        }
+
+        // lock lobby row to prevent race conditions on max players
+        Lobby lobby = lobbyRepository.findByIdForJoin(lobbyId)
+                .orElseThrow(() -> new LobbyNotFoundException(lobbyId));
+
+        if (lobby.getStatus() != LobbyStatus.OPEN) {
+            throw new LobbyNotJoinableException(lobbyId, lobby.getStatus());
+        }
+
+        int currentMemberCount = lobby.getMembers().size();
+        if (currentMemberCount >= lobby.getMaxPlayers()) {
+            throw new LobbyFullException(lobbyId);
+        }
+
+        // verify password if lobby is protected
+        if (lobby.hasPassword()) {
+            String rawPassword = (joinLobbyRequestDto == null) ? null : joinLobbyRequestDto.getPassword();
+            if (rawPassword == null || rawPassword.isBlank()) {
+                throw new LobbyPasswordInvalidException(lobbyId);
+            }
+            if (!passwordEncoder.matches(rawPassword, lobby.getPasswordHash())) {
+                throw new LobbyPasswordInvalidException(lobbyId);
+            }
+        }
+
+        LobbyMember newMember = LobbyMember.builder()
+                .lobby(lobby)
+                .playerId(identity.playerId())
+                .name(identity.name())
+                .avatarId(identity.avatarId())
+                .role(LobbyRole.PLAYER)
+                .ready(false)
+                .build();
+
+        lobby.getMembers().add(newMember);
+
+        Lobby updatedLobby = lobbyRepository.save(lobby);
+
+        updatedLobby.getMembers().sort(Comparator.comparing(LobbyMember::getJoinedAt));
+
+        return lobbyViewMapper.toDto(updatedLobby);
     }
 
     /**

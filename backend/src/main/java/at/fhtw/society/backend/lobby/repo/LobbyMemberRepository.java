@@ -18,4 +18,6 @@ public interface LobbyMemberRepository extends JpaRepository<LobbyMember, UUID> 
     long countByLobby_Id(UUID lobbyId);
     // to check if a player is already in a lobby
     boolean existsByPlayerId(UUID playerId);
+    // to check if a player is in a specific lobby
+    boolean existsByLobby_IdAndPlayerId(UUID lobbyId, UUID playerId);
 }
