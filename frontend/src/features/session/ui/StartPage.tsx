@@ -1,13 +1,13 @@
 "use client";
 
 import {FormEvent, useState} from "react";
-import {NesButton} from "@/components/ui/NesButton";
-import {NesInput} from "@/components/ui/NesInput";
-import {AVATARS} from "@/lib/avatars";
-import {AvatarPreview} from "@/components/ui/AvatarPreview";
-import {usePlayerSession} from "@/features/player/PlayerSessionContext";
-import {createGuestSession} from "@/lib/api/session";
-import {ProblemDetails} from "@/lib/api/problemDetails";
+import {NesButton} from "@/shared/ui/NesButton";
+import {NesInput} from "@/shared/ui/NesInput";
+import {AVATARS} from "@/shared/avatars";
+import {AvatarPreview} from "@/shared/ui/AvatarPreview";
+import {usePlayerSession} from "@/features/session/PlayerSessionContext";
+import {createGuestSession} from "@/features/session/api/session";
+import {ProblemDetails} from "@/shared/http/problemDetails";
 
 export function StartPage() {
     const {setSession} = usePlayerSession();

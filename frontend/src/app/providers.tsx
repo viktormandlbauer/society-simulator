@@ -1,7 +1,7 @@
 "use client";
 
 import {ReactNode} from "react";
-import {PlayerSessionProvider} from "@/features/player/PlayerSessionContext";
+import {PlayerSessionProvider} from "@/features/session/PlayerSessionContext";
 
 export function Providers({children}: { children: ReactNode }) {
     return (

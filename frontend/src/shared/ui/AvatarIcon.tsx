@@ -1,4 +1,4 @@
-import {getAvatarConfigById, type AvatarId} from "@/lib/avatars";
+import {getAvatarConfigById, type AvatarId} from "@/shared/avatars";
 
 export type AvatarSize = "small" | "medium" | "large";
 

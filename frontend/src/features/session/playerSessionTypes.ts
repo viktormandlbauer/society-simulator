@@ -1,4 +1,4 @@
-import {AvatarId} from "@/lib/avatars";
+import {AvatarId} from "@/shared/avatars";
 
 export type PlayerRole = "GUEST" | "PLAYER" | "GAMEMASTER";
 

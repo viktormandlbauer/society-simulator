@@ -1,8 +1,8 @@
 "use client";
 
-import { usePlayerSession } from "@/features/player/PlayerSessionContext";
-import { StartPage } from "@/features/pages/StartPage";
-import { LobbyListPage } from "@/features/pages/LobbyListPage";
+import { usePlayerSession } from "@/features/session/PlayerSessionContext";
+import { StartPage } from "@/features/session/ui/StartPage";
+import { LobbyListPage } from "@/features/lobby/ui/LobbyListPage";
 
 export function RootShell() {
     const { session } = usePlayerSession();

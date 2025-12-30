@@ -1,6 +1,6 @@
 "use client";
 
-import {PlayerSession} from "@/features/player/playerSessionTypes";
+import {PlayerSession} from "@/features/session/playerSessionTypes";
 import {createContext, ReactNode, useContext, useMemo, useState} from "react";
 
 type PlayerSessionContextValue = {

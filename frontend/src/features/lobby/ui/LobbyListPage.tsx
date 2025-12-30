@@ -1,6 +1,6 @@
-import { usePlayerSession } from "@/features/player/PlayerSessionContext";
-import { NesButton } from "@/components/ui/NesButton";
-import {getAvatarConfigById} from "@/lib/avatars";
+import { usePlayerSession } from "@/features/session/PlayerSessionContext";
+import { NesButton } from "@/shared/ui/NesButton";
+import {getAvatarConfigById} from "@/shared/avatars";
 
 export function LobbyListPage() {
     const { session, setSession } = usePlayerSession();

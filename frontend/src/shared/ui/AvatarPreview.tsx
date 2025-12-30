@@ -1,5 +1,5 @@
-import {AvatarIcon} from "@/components/ui/AvatarIcon";
-import {getAvatarConfigById, type AvatarId} from "@/lib/avatars";
+import {AvatarIcon} from "@/shared/ui/AvatarIcon";
+import {getAvatarConfigById, type AvatarId} from "@/shared/avatars";
 
 interface AvatarPreviewProps {
     id: AvatarId;

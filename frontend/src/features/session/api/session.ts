@@ -1,5 +1,5 @@
-import type { AvatarId } from "@/lib/avatars";
-import type { ProblemDetails } from "./problemDetails";
+import type { AvatarId } from "@/shared/avatars";
+import type { ProblemDetails } from "../../../shared/http/problemDetails";
 
 export type GuestSessionRequest = {
     name: string;
