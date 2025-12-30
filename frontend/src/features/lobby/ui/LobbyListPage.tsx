@@ -1,9 +1,11 @@
-import { usePlayerSession } from "@/features/session/PlayerSessionContext";
 import { NesButton } from "@/shared/ui/NesButton";
 import {getAvatarConfigById} from "@/shared/avatars";
+import {useSessionStore} from "@/features/session/sessionStore";
 
 export function LobbyListPage() {
-    const { session, setSession } = usePlayerSession();
+    const session = useSessionStore((s) => s.session);
+    const clearSession = useSessionStore((s) => s.clearSession);
+
     // get the avatar config for the current session
     const avatarConfig = session ? getAvatarConfigById(session.avatarId) : null;
     const avatar = avatarConfig ? (
@@ -14,6 +16,9 @@ export function LobbyListPage() {
         />
     ) : null;
 
+    function handleLeaveSession() {
+        clearSession();
+    }
 
     return (
         <div className="nes-container with-title is-rounded is-dark">
@@ -24,8 +29,7 @@ export function LobbyListPage() {
                     Logged in as: {session?.name} {avatar}
                 </span>
 
-                {/* Temporary: lets us test switching back to StartPage without refresh */}
-                <NesButton variant="warning" onClick={() => setSession(null)}>
+                <NesButton variant="warning" onClick={handleLeaveSession}>
                     Leave session
                 </NesButton>
             </div>

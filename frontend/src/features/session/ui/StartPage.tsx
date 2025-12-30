@@ -5,12 +5,12 @@ import {NesButton} from "@/shared/ui/NesButton";
 import {NesInput} from "@/shared/ui/NesInput";
 import {AVATARS} from "@/shared/avatars";
 import {AvatarPreview} from "@/shared/ui/AvatarPreview";
-import {usePlayerSession} from "@/features/session/PlayerSessionContext";
 import {createGuestSession} from "@/features/session/api/session";
-import {ProblemDetails} from "@/shared/http/problemDetails";
+import {ProblemDetailsError} from "@/shared/http/problemDetails";
+import {useSessionStore} from "@/features/session/sessionStore";
 
 export function StartPage() {
-    const {setSession} = usePlayerSession();
+    const setSession = useSessionStore((s) => s.setSession);
 
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [name, setName] = useState("");
@@ -52,27 +52,41 @@ export function StartPage() {
                 avatarId: currentAvatar.id,
             });
 
-            // Persist sessiongi
-            setSession({
+            const newSession = {
                 playerId: res.playerId,
                 name: res.name,
                 avatarId: res.avatarId,
                 token: res.token,
                 expiresAt: res.expiresAt,
                 role: res.role,
-            });
+            };
+
+            setSession(newSession);
 
             console.log("Guest session created: ", res);
         } catch (err) {
-            const problem = err as ProblemDetails;
+            if (err instanceof ProblemDetailsError) {
+                const problem = err.problem;
 
-            const message =
-                problem.errors?.name ??
-                problem.detail ??
-                problem.title ??
-                "Something went wrong. Please try again later";
+                // Log only server-side/infrastructure failures (5xx)
+                if (!problem.status || problem.status >= 500) {
+                    console.error("Session request failed:", problem);
+                }
 
-            setApiError(message);
+                // `errors.name`ist string[] (first message is enough for UI)
+                const fieldMsg = problem.errors?.name?.[0];
+
+                setApiError(
+                    fieldMsg ??
+                    problem.detail ??
+                    problem.title ??
+                    "Something went wrong. Please try again later."
+                );
+            } else {
+                // Unexpected Error
+                setApiError("Something went wrong. Please try again later.");
+                console.error(err);
+            }
         } finally {
             setIsSubmitting(false);
         }
