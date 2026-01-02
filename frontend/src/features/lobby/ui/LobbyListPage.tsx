@@ -1,6 +1,9 @@
-import { NesButton } from "@/shared/ui/NesButton";
+import {NesButton} from "@/shared/ui/NesButton";
 import {getAvatarConfigById} from "@/shared/avatars";
 import {useSessionStore} from "@/features/session/sessionStore";
+import {useEffect} from "react";
+import {getLobbies, joinLobby, leaveLobby} from "@/features/lobby/api/lobbies";
+import {ProblemDetailsError} from "@/shared/http/problemDetails";
 
 export function LobbyListPage() {
     const session = useSessionStore((s) => s.session);
@@ -19,6 +22,17 @@ export function LobbyListPage() {
     function handleLeaveSession() {
         clearSession();
     }
+
+    // debug: fetch and log the list of lobbies on component mount
+    useEffect(() => {
+        if (!session?.token) return;
+
+        const lobbyId = "c3ff88ae-d89f-41e9-8e62-ab353664b982";
+
+        leaveLobby(session.token, lobbyId)
+            .then(() => console.log("left lobby"))
+            .catch((e) => console.error(e instanceof ProblemDetailsError ? e.problem : e));
+    }, [session?.token]);
 
     return (
         <div className="nes-container with-title is-rounded is-dark">
