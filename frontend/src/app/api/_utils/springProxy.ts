@@ -6,7 +6,7 @@ type ProblemDetails = {
     status?: number;
     detail?: string;
     instance?: string;
-    errors?: Record<string, string[]>;
+    errors?: Record<string, string | string[]>;
 };
 
 function problem(status: number, title: string, detail?: string) {

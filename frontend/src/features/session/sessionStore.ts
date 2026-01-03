@@ -57,3 +57,8 @@ export const useSessionStore = create<SessionState>()(
         }
     )
 );
+
+export function clearSessionAndStorage() {
+    useSessionStore.getState().clearSession();
+    useSessionStore.persist.clearStorage();
+}
