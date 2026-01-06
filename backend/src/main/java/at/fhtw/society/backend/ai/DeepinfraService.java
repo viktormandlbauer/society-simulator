@@ -17,7 +17,7 @@ public class DeepinfraService {
     public DeepinfraService(DeepinfraProperties props) {
         this.http = WebClient.builder()
                 .baseUrl(Objects.requireNonNull(props.getUrl(), "API url is required"))
-                .defaultHeader("Authorization", "Bearer " + Objects.requireNonNull(props.getKey(), "API key is required"))
+                .defaultHeader("Authorization", "Bearer " + Objects.requireNonNull(props.getApiKey(), "API key is required"))
                 .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
                 .build();

@@ -1,92 +1,73 @@
 package at.fhtw.society.backend.game.controller;
 
-
 import at.fhtw.society.backend.game.dto.CreateGameDto;
+import at.fhtw.society.backend.game.dto.DilemmaDto;
+import at.fhtw.society.backend.game.dto.VoteRequestDto;
+import at.fhtw.society.backend.game.dto.VoteResultDto;
 import at.fhtw.society.backend.game.service.GameService;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/games")
 public class GameController {
 
     private final GameService gameService;
 
-    private static final Logger logger = LoggerFactory.getLogger(GameController.class);
-
-    public GameController(GameService gameService) {
-        this.gameService = gameService;
+    @PostMapping
+    public ResponseEntity<Object> create(@RequestBody CreateGameDto dto) {
+        UUID id = gameService.createGame(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("status", "success", "data", Map.of("gameId", id)));
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<Object> createGame(@RequestBody CreateGameDto createGameDto) {
-        try {
-
-            UUID gameId = this.gameService.createGame(createGameDto);
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "data", "Successfully created game with id: " + gameId
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "status", "error",
-                    "message", "Failed to create game: " + e.getMessage()
-            ));
-        }
+    @PostMapping("/{gameId}/join")
+    public ResponseEntity<Object> join(@PathVariable UUID gameId, @RequestBody JoinRequest req) {
+        gameService.joinGame(gameId, req.getPlayerId());
+        return ResponseEntity.ok(Map.of("status", "success", "data", Map.of("gameId", gameId, "playerId", req.getPlayerId())));
     }
 
-    @PostMapping("/start/{gameId}")
-    public ResponseEntity<Object> startGame(@PathVariable UUID gameId) {
-        try {
-
-            this.gameService.startGame(gameId);
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "data", "Successfully started game with id: " + gameId
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "status", "error",
-                    "message", "Failed to start game with id: " + e.getMessage()
-            ));
-        }
+    @PostMapping("/{gameId}/start")
+    public ResponseEntity<Object> start(@PathVariable UUID gameId) {
+        gameService.startGame(gameId);
+        return ResponseEntity.ok(Map.of("status", "success", "data", Map.of("gameId", gameId)));
     }
 
     @GetMapping("/{gameId}/intro")
-    public ResponseEntity<Object> getIntro(@PathVariable UUID gameId) {
-        try {
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "data", this.gameService.getIntro(gameId)
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "status", "error",
-                    "message", "Failed to start game with id: " + e.getMessage()
-            ));
-        }
+    public ResponseEntity<Object> intro(@PathVariable UUID gameId) {
+        return ResponseEntity.ok(Map.of("status", "success", "data", gameService.getIntro(gameId)));
     }
 
+    /** current dilemma (no AI call) */
     @GetMapping("/{gameId}/dilemma")
-    public ResponseEntity<Object> requestDilemma(@PathVariable UUID gameId) {
-        try {
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "data", this.gameService.requestNewDilemma(gameId)
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "status", "error",
-                    "message", "Failed to start game with id: " + e.getMessage()
-            ));
-        }
+    public ResponseEntity<Object> currentDilemma(@PathVariable UUID gameId) {
+        DilemmaDto dto = gameService.getCurrentDilemma(gameId);
+        return ResponseEntity.ok(Map.of("status", "success", "data", dto));
+    }
+
+    /** optional: manual next round trigger */
+    @PostMapping("/{gameId}/rounds/new")
+    public ResponseEntity<Object> newRound(@PathVariable UUID gameId) {
+        DilemmaDto dto = gameService.newRound(gameId);
+        return ResponseEntity.ok(Map.of("status", "success", "data", dto));
+    }
+
+    /** vote */
+    @PostMapping("/{gameId}/dilemma/vote")
+    public ResponseEntity<Object> vote(@PathVariable UUID gameId, @RequestBody VoteRequestDto req) {
+        VoteResultDto res = gameService.vote(gameId, req);
+        return ResponseEntity.ok(Map.of("status", "success", "data", res));
+    }
+
+    @Getter @Setter
+    public static class JoinRequest {
+        private UUID playerId;
     }
 }
