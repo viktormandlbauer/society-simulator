@@ -1,12 +1,9 @@
 "use client";
 
 import {ReactNode} from "react";
-import {PlayerSessionProvider} from "@/features/player/PlayerSessionContext";
+import {useSessionHydration} from "@/features/session/useSessionHydration";
 
 export function Providers({children}: { children: ReactNode }) {
-    return (
-        <PlayerSessionProvider>
-            {children}
-        </PlayerSessionProvider>
-    )
+    useSessionHydration();
+    return children
 }
