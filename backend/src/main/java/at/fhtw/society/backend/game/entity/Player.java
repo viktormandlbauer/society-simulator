@@ -1,13 +1,14 @@
 package at.fhtw.society.backend.game.entity;
 
-import at.fhtw.society.backend.game.entity.Game;
-import at.fhtw.society.backend.game.entity.Voting;
+import at.fhtw.society.backend.lobby.entity.LobbyMember;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "player")
@@ -27,16 +28,13 @@ public class Player {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @ManyToMany
-    @JoinTable(
-            name = "game_players",
-            joinColumns = @JoinColumn(name = "player_id"),
-            inverseJoinColumns = @JoinColumn(name = "game_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"game_id", "player_id"})
-    )
-    private Set<Game> games = new HashSet<>();
+    /**
+     * Player belongs to lobbies via LobbyMember (your existing model).
+     * If you don't need navigation from player -> memberships, you can remove this.
+     */
+    @OneToMany(mappedBy = "player")
+    private Set<LobbyMember> lobbyMemberships = new HashSet<>();
 
-    // optional: useful if you want to navigate from player -> votes
     @OneToMany(mappedBy = "player")
     private Set<Voting> votes = new HashSet<>();
 }

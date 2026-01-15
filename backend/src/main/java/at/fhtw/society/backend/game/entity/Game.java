@@ -2,7 +2,7 @@ package at.fhtw.society.backend.game.entity;
 
 import at.fhtw.society.backend.ai.Message;
 import at.fhtw.society.backend.game.dto.GameStatus;
-import at.fhtw.society.backend.game.entity.Player;
+import at.fhtw.society.backend.lobby.entity.Lobby;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
@@ -33,24 +33,18 @@ public class Game {
     @Column(name = "status", nullable = false, length = 32)
     private GameStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    /**
+     * The ONE source of "setup truth":
+     * theme, maxPlayers, maxRounds, members, gamemaster, etc.
+     */
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-            name = "gamemaster_id",
+            name = "lobby_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_game_gamemaster_player")
+            unique = true,
+            foreignKey = @ForeignKey(name = "fk_game_lobby")
     )
-    private Player gamemaster;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "theme_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_game_theme")
-    )
-    private Theme theme;
-
-    @Column(name = "maxrounds", nullable = false)
-    private Integer maxRounds;
+    private Lobby lobby;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -58,9 +52,6 @@ public class Game {
             foreignKey = @ForeignKey(name = "fk_game_current_round")
     )
     private Round currentRound;
-
-    @Column(name = "maxplayers", nullable = false)
-    private Integer maxPlayers;
 
     @Column(name = "started_at")
     private OffsetDateTime startedAt;
@@ -80,19 +71,13 @@ public class Game {
     @Column(name = "conversation", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> conversation = new HashMap<>();
 
-    @ManyToMany(mappedBy = "games")
-    private Set<Player> players = new HashSet<>();
-
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Round> rounds = new HashSet<>();
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public Game(Player gm, Theme theme, int maxRounds, int maxPlayers) {
-        this.gamemaster = gm;
-        this.theme = theme;
-        this.maxRounds = maxRounds;
-        this.maxPlayers = maxPlayers;
+    public Game(Lobby lobby) {
+        this.lobby = lobby;
     }
 
     @PrePersist
@@ -117,4 +102,10 @@ public class Game {
             this.conversation = new HashMap<>(Map.of("messages", messages));
         }
     }
+
+    // Convenience (not persisted, but nice)
+    @Transient public Player getGamemaster() { return lobby != null ? lobby.getGamemaster() : null; }
+    @Transient public Theme getTheme() { return lobby != null ? lobby.getTheme() : null; }
+    @Transient public int getMaxPlayers() { return lobby != null ? lobby.getMaxPlayers() : 0; }
+    @Transient public int getMaxRounds() { return lobby != null ? lobby.getMaxRounds() : 0; }
 }
