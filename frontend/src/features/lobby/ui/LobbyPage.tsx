@@ -130,11 +130,20 @@ export function LobbyPage() {
                 {/* RIGHT: AI output */}
                 <div className="md:col-span-2">
                     <div className="nes-container is-rounded is-dark h-full min-h-[320px]">
-                        <p className="mb-2">AI Output</p>
-                        <div className="text-xs opacity-70">
-                            AI narrative placeholder (DeepInfra integration later)
+                            <p className="mb-2 font-bold">Welcome to Society Simulator!</p>
+
+                            <p className="text-xs opacity-70 mb-2">
+                                Step into a living, evolving society where every choice matters. Your decisions will shape communities, influence culture, and determine the future of the world you create.
+                            </p>
+
+                            <p className="text-xs opacity-70 mb-2">
+                                How to play:
+                            </p>
+
+                            <p className="text-xs opacity-70">
+                                You’ll be presented with a scenario. Review the available options and vote for the one you believe is best. Once voting ends, the outcome shapes what happens next and a new scenario appears.
+                            </p>
                         </div>
-                    </div>
                 </div>
             </div>
         </div>
