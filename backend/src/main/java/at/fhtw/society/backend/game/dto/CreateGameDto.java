@@ -8,9 +8,11 @@ import java.util.UUID;
 
 @Setter @Getter
 public class CreateGameDto {
-    private String username;
+    private String name;
+    private String gamemaster;
     private int playerCount;
     private String themeName;
     private int maxRounds;
     private int maxTurnTime;
+    private int maxPlayers;
 }

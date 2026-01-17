@@ -1,10 +1,13 @@
 package at.fhtw.society.backend.session.service;
 
+import at.fhtw.society.backend.game.entity.Player;
+import at.fhtw.society.backend.game.repo.PlayerRepository;
 import at.fhtw.society.backend.security.jwt.JwtService;
 import at.fhtw.society.backend.session.exception.InvalidSessionRequestException;
 import at.fhtw.society.backend.session.dto.GuestSessionRequestDto;
 import at.fhtw.society.backend.session.dto.GuestSessionResponseDto;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -19,18 +22,22 @@ public class SessionService {
     private static final String ROLE_GUEST = "GUEST"; // TODO: unify with ROLE_* constants
 
     private final JwtService jwtService;
+    private final PlayerRepository playerRepository;
 
-    public SessionService(JwtService jwtService) {
+    public SessionService(JwtService jwtService, PlayerRepository playerRepository) {
         this.jwtService = jwtService;
+        this.playerRepository = playerRepository;
     }
 
     /**
      * Creates a new guest session based on the provided request data.
+     * Persists the guest player in the database without requiring a password.
      *
      * @param request the request DTO containing the player's name and avatar ID
      * @return a response DTO containing the player ID, normalized name, avatar ID, and JWT token
      * @throws InvalidSessionRequestException if the provided name is invalid after normalization
      */
+    @Transactional
     public GuestSessionResponseDto createGuestSession(GuestSessionRequestDto request) {
         String normalizedName = normalizeDisplayName(request.getName());
 
@@ -38,17 +45,25 @@ public class SessionService {
             throw new InvalidSessionRequestException("Name must not be blank after trimming.");
         }
 
-        UUID playerId = UUID.randomUUID();
+        // Create and persist the guest player
+        Player guestPlayer = Player.builder()
+                .name(normalizedName)
+                .avatarId(request.getAvatarId())
+                .isGuest(true)
+                .build();
 
+        Player savedPlayer = playerRepository.save(guestPlayer);
+
+        // Generate JWT token for the guest player
         JwtService.IssuedToken issuedToken = jwtService.issuePlayerToken(
-                playerId,
+                savedPlayer.getId(),
                 normalizedName,
                 request.getAvatarId(),
                 ROLE_GUEST
         );
 
         return GuestSessionResponseDto.builder()
-                .playerId(playerId.toString())
+                .playerId(savedPlayer.getId().toString())
                 .name(normalizedName)
                 .avatarId(request.getAvatarId())
                 .token(issuedToken.token())
@@ -57,7 +72,6 @@ public class SessionService {
                 .build();
 
         // TODO:
-        // Persist player: store playerId, normalizedName, avatarId, createdAt in the database
         // Login: createUserSession(LoginRequestDto) -> role "USER", subject = userId etc.
     }
 

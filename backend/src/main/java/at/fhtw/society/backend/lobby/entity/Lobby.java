@@ -1,5 +1,7 @@
 package at.fhtw.society.backend.lobby.entity;
 
+import at.fhtw.society.backend.game.entity.Game;
+import at.fhtw.society.backend.game.entity.Player;
 import at.fhtw.society.backend.game.entity.Theme;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "lobbies")
+@Table(name = "lobby")
 public class Lobby {
 
     @Id
@@ -23,6 +25,15 @@ public class Lobby {
 
     @Column(nullable = false, length = 60)
     private String name;
+
+    /**
+     * Moved from Game -> Lobby.
+     * Since we use guest sessions (no Player entities), we store the gamemaster info in LobbyMember instead.
+     * This field is kept for future use when proper user accounts are implemented.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "gamemaster_id", nullable = true)
+    private Player gamemaster;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "theme_id", nullable = false)
@@ -47,9 +58,14 @@ public class Lobby {
     @OneToMany(mappedBy = "lobby", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LobbyMember> members = new ArrayList<>();
 
+    /**
+     * Optional back reference (1 lobby -> 1 game).
+     */
+    @OneToOne(mappedBy = "lobby", fetch = FetchType.LAZY)
+    private Game game;
+
     @Transient
     public boolean hasPassword() {
         return passwordHash != null && !passwordHash.isBlank();
     }
-
 }

@@ -2,6 +2,7 @@ package at.fhtw.society.backend.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -25,6 +26,7 @@ import java.util.Map;
  * - generic/unexpected errors (as HTTP 500)
  */
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -48,6 +50,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ApiException.class)
     public ProblemDetail handleApiException(ApiException ex, HttpServletRequest request) {
+        log.warn("API Exception: {} - {} at {}", ex.getClass().getSimpleName(), ex.getMessage(), request.getRequestURI());
+
         ProblemDetail problem = ProblemDetail.forStatus(ex.getStatus());
         problem.setTitle(ex.getTitle());
         problem.setDetail(ex.getMessage());
@@ -74,6 +78,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleMethodArgumentNotValidException(MethodArgumentNotValidException ex,
                                                                HttpServletRequest request) {
+        log.warn("Validation failed at {}: {}", request.getRequestURI(), ex.getBindingResult().getFieldErrors());
+
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Validation Failed");
         problem.setDetail("One or more validation errors occurred.");
@@ -103,6 +109,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail handleConstraintViolationException(ConstraintViolationException ex,
                                                             HttpServletRequest request) {
+        log.warn("Constraint violation at {}: {}", request.getRequestURI(), ex.getConstraintViolations());
+
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Constraint Violation");
         problem.setDetail("One or more request parameters are invalid.");
@@ -134,6 +142,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail handleHttpMessageNotReadableException(HttpMessageNotReadableException ex,
                                                                HttpServletRequest request) {
+        log.warn("Malformed JSON request at {}: {}", request.getRequestURI(), ex.getMessage());
+
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Malformed JSON Request");
         problem.setDetail("The request body contains malformed JSON or invalid values.");
@@ -163,6 +173,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex,
                                                         HttpServletRequest request) {
+        log.warn("Illegal argument at {}: {}", request.getRequestURI(), ex.getMessage());
+
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Invalid Argument");
         problem.setDetail(ex.getMessage());
@@ -186,6 +198,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpectedException(Exception ex,
                                                      HttpServletRequest request) {
+        log.error("Unexpected exception at {}", request.getRequestURI(), ex);
+
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problem.setTitle("Internal Server Error");
         problem.setDetail("An unexpected error occurred. Please try again later.");

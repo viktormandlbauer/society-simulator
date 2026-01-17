@@ -40,6 +40,9 @@ export class ProblemDetailsError extends Error {
         super(getProblemMessage(problem));
         this.problem = problem;
         this.name = "ProblemDetailsError";
+
+        // Restore prototype chain for instanceof checks
+        Object.setPrototypeOf(this, ProblemDetailsError.prototype);
     }
 }
 

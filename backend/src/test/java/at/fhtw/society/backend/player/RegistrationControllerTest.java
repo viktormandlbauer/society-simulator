@@ -1,8 +1,8 @@
 package at.fhtw.society.backend.player;
 
-import at.fhtw.society.backend.player.controller.RegistrationController;
-import at.fhtw.society.backend.player.dto.RegisterRequest;
-import at.fhtw.society.backend.player.service.RegistrationService;
+import at.fhtw.society.backend.player.controller.AuthController;
+import at.fhtw.society.backend.player.dto.AuthRequest;
+import at.fhtw.society.backend.player.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(RegistrationController.class)
+@WebMvcTest(AuthController.class)
 @Import(RegistrationControllerTest.TestConfig.class)
 class RegistrationControllerTest {
 
@@ -29,7 +29,7 @@ class RegistrationControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private RegistrationService registrationService;
+    private AuthService registrationService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -37,8 +37,8 @@ class RegistrationControllerTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        public RegistrationService registrationService() {
-            return Mockito.mock(RegistrationService.class);
+        public AuthService registrationService() {
+            return Mockito.mock(AuthService.class);
         }
     }
 
@@ -47,7 +47,7 @@ class RegistrationControllerTest {
     void registerPlayerSuccess() throws Exception {
         doReturn(42L).when(registrationService).registerPlayer("alice");
 
-        var req = new RegisterRequest("alice");
+        var req = new AuthRequest("alice");
         mockMvc.perform(post("/api/players/player/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -63,7 +63,7 @@ class RegistrationControllerTest {
     void registerGamemasterSuccess() throws Exception {
         doReturn(7L).when(registrationService).registerGamemaster("gm");
 
-        var req = new RegisterRequest("gm");
+        var req = new AuthRequest("gm");
         mockMvc.perform(post("/api/players/gamemaster/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -80,7 +80,7 @@ class RegistrationControllerTest {
         doThrow(new IllegalArgumentException("username already taken: alice"))
                 .when(registrationService).registerPlayer(anyString());
 
-        var req = new RegisterRequest("alice");
+        var req = new AuthRequest("alice");
         mockMvc.perform(post("/api/players/player/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))

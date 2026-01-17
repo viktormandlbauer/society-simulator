@@ -2,7 +2,6 @@ package at.fhtw.society.backend.game.service;
 
 import at.fhtw.society.backend.game.dto.AddThemeDto;
 import at.fhtw.society.backend.game.entity.Theme;
-import at.fhtw.society.backend.game.repo.GameRepository;
 import at.fhtw.society.backend.game.repo.ThemeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

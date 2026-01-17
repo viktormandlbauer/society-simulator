@@ -1,5 +1,6 @@
 package at.fhtw.society.backend.lobby.controller;
 
+import at.fhtw.society.backend.game.service.GameService;
 import at.fhtw.society.backend.lobby.dto.CreateLobbyRequestDto;
 import at.fhtw.society.backend.lobby.dto.JoinLobbyRequestDto;
 import at.fhtw.society.backend.lobby.dto.LobbyListItemDto;
@@ -15,6 +16,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -24,11 +26,13 @@ public class LobbyController {
     private final LobbyQueryService lobbyQueryService;
     private final JwtService jwtService;
     private final LobbyCommandService lobbyCommandService;
+    private final GameService gameService;
 
-    public LobbyController(LobbyQueryService lobbyQueryService, JwtService jwtService, LobbyCommandService lobbyCommandService) {
+    public LobbyController(LobbyQueryService lobbyQueryService, JwtService jwtService, LobbyCommandService lobbyCommandService, GameService gameService) {
         this.lobbyQueryService = lobbyQueryService;
         this.jwtService = jwtService;
         this.lobbyCommandService = lobbyCommandService;
+        this.gameService = gameService;
     }
 
     @GetMapping
@@ -65,5 +69,22 @@ public class LobbyController {
         var identity = jwtService.toPlayerIdentity(jwt);
         lobbyCommandService.leaveLobby(lobbyId, identity.playerId());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{lobbyId}/start")
+    public ResponseEntity<Object> startGame(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID lobbyId
+    ) {
+        var identity = jwtService.toPlayerIdentity(jwt);
+
+        // Verify the player is the gamemaster of this lobby
+        lobbyCommandService.verifyGamemaster(lobbyId, identity.playerId());
+
+        // Create and start the game
+        UUID gameId = gameService.createGame(lobbyId);
+        gameService.startGame(gameId);
+
+        return ResponseEntity.ok(Map.of("status", "success", "data", Map.of("gameId", gameId)));
     }
 }
