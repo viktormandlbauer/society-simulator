@@ -160,13 +160,14 @@ public class LobbyCommandService {
 
     /**
      * Player leaves the lobby. If the player is the gamemaster, a new gamemaster is assigned.
-     * If the lobby becomes empty, it is deleted.
+     * If the lobby becomes empty, it is deleted (unless a game has been created for it).
      * @param lobbyId - ID of the lobby to leave
      * @param playerId - ID of the player leaving the lobby
      */
     @Transactional
     public void leaveLobby(UUID lobbyId, UUID playerId) {
-        if (!lobbyRepository.existsById(lobbyId)) throw new LobbyNotFoundException(lobbyId);
+        Lobby lobby = lobbyRepository.findById(lobbyId)
+                .orElseThrow(() -> new LobbyNotFoundException(lobbyId));
 
         LobbyMember leavingMember = lobbyMemberRepository.findByLobby_IdAndPlayerId(lobbyId, playerId)
                 .orElseThrow(() -> new LobbyMemberNotFoundException(lobbyId, playerId));
@@ -178,14 +179,40 @@ public class LobbyCommandService {
 
         boolean isLobbyEmpty = lobbyMemberRepository.countByLobby_Id(lobbyId) == 0L;
 
+        // Only delete the lobby if it's empty AND no game has been created for it
         if (isLobbyEmpty) {
-            lobbyRepository.deleteById(lobbyId);
+            // Check if a game exists for this lobby
+            if (lobby.getGame() == null) {
+                lobbyRepository.deleteById(lobbyId);
+            }
+            // If a game exists, just leave the lobby empty (game still references it)
         } else if (wasGamemaster) {
             Optional<LobbyMember> newGamemaster = lobbyMemberRepository.findFirstByLobby_IdOrderByJoinedAtAsc(lobbyId);
             newGamemaster.ifPresent(member -> {
                 member.setRole(LobbyRole.GAMEMASTER);
                 lobbyMemberRepository.save(member);
             });
+        }
+    }
+
+    /**
+     * Verifies that the given player is the gamemaster of the specified lobby.
+     * @param lobbyId - ID of the lobby
+     * @param playerId - ID of the player to verify
+     * @throws LobbyNotFoundException if the lobby does not exist
+     * @throws LobbyMemberNotFoundException if the player is not a member of the lobby
+     * @throws NotGamemasterException if the player is not the gamemaster
+     */
+    public void verifyGamemaster(UUID lobbyId, UUID playerId) {
+        if (!lobbyRepository.existsById(lobbyId)) {
+            throw new LobbyNotFoundException(lobbyId);
+        }
+
+        LobbyMember member = lobbyMemberRepository.findByLobby_IdAndPlayerId(lobbyId, playerId)
+                .orElseThrow(() -> new LobbyMemberNotFoundException(lobbyId, playerId));
+
+        if (member.getRole() != LobbyRole.GAMEMASTER) {
+            throw new NotGamemasterException(lobbyId, playerId);
         }
     }
 }

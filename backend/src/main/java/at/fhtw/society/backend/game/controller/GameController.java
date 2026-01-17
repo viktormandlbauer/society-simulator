@@ -1,7 +1,7 @@
 package at.fhtw.society.backend.game.controller;
 
-import at.fhtw.society.backend.game.dto.CreateGameDto;
 import at.fhtw.society.backend.game.dto.DilemmaDto;
+import at.fhtw.society.backend.game.dto.FinalOutcomeDto;
 import at.fhtw.society.backend.game.dto.VoteRequestDto;
 import at.fhtw.society.backend.game.dto.VoteResultDto;
 import at.fhtw.society.backend.game.service.GameService;
@@ -23,8 +23,8 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping
-    public ResponseEntity<Object> create(@RequestBody CreateGameDto dto) {
-        UUID id = gameService.createGame(dto);
+    public ResponseEntity<Object> create(@RequestBody CreateGameRequest req) {
+        UUID id = gameService.createGame(req.getLobbyId());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("status", "success", "data", Map.of("gameId", id)));
     }
 
@@ -64,6 +64,18 @@ public class GameController {
     public ResponseEntity<Object> vote(@PathVariable UUID gameId, @RequestBody VoteRequestDto req) {
         VoteResultDto res = gameService.vote(gameId, req);
         return ResponseEntity.ok(Map.of("status", "success", "data", res));
+    }
+
+    /** Get final outcome for a completed game */
+    @GetMapping("/{gameId}/outcome")
+    public ResponseEntity<Object> getFinalOutcome(@PathVariable UUID gameId) {
+        FinalOutcomeDto outcome = gameService.getFinalOutcome(gameId);
+        return ResponseEntity.ok(Map.of("status", "success", "data", outcome));
+    }
+
+    @Getter @Setter
+    public static class CreateGameRequest {
+        private UUID lobbyId;
     }
 
     @Getter @Setter

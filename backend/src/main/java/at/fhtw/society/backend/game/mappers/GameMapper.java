@@ -10,20 +10,21 @@ import org.mapstruct.Named;
 @Mapper(componentModel = "spring")
 public interface GameMapper {
 
-    @Mapping(target = "gamemasterId", source = "gamemaster.id")
-    @Mapping(target = "gamemasterUsername", source = "gamemaster.username")
+    // Note: gamemaster might be null for guest sessions
+    @Mapping(target = "gamemasterId", expression = "java(game.getLobby() != null && game.getLobby().getGamemaster() != null ? game.getLobby().getGamemaster().getId() : null)")
+    @Mapping(target = "gamemasterUsername", expression = "java(game.getLobby() != null && game.getLobby().getGamemaster() != null ? game.getLobby().getGamemaster().getUsername() : null)")
 
-    @Mapping(target = "themeId", source = "theme.id")
-    @Mapping(target = "themeName", source = "theme.theme")
+    @Mapping(target = "themeId", source = "lobby.theme.id")
+    @Mapping(target = "themeName", source = "lobby.theme.theme")
 
     @Mapping(target = "status", expression = "java(game.getStatus() != null ? game.getStatus().name() : null)")
 
     @Mapping(target = "currentPlayerCount",
-            expression = "java(game.getPlayers() != null ? game.getPlayers().size() : 0)")
-    @Mapping(target = "maxPlayerCount", source = "maxPlayers")
+            expression = "java(game.getLobby() != null && game.getLobby().getMembers() != null ? game.getLobby().getMembers().size() : 0)")
+    @Mapping(target = "maxPlayerCount", source = "lobby.maxPlayers")
 
     @Mapping(target = "currentRound", source = "currentRound", qualifiedByName = "roundNumberOrZero")
-    @Mapping(target = "maxRounds", source = "maxRounds")
+    @Mapping(target = "maxRounds", source = "lobby.maxRounds")
     GameDto toDto(Game game);
 
     // Mapping DTO -> entity needs repositories (load Player/Theme by id), so keep it out of MapStruct.

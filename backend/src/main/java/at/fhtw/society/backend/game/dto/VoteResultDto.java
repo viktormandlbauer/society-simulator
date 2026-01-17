@@ -14,4 +14,5 @@ public class VoteResultDto {
     private Map<Integer, Long> counts;
     
     private DilemmaDto nextDilemma;
+    private String outcomeSummary;
 }

@@ -52,3 +52,18 @@ export function leaveLobby(token: string, lobbyId: string): Promise<void> {
         cache: "no-store"
     });
 }
+
+/**
+ * Starts a game from a lobby (gamemaster only).
+ * Creates a game and starts it, returning the game ID.
+ */
+export function startGameFromLobby(token: string, lobbyId: string): Promise<string> {
+    return fetchJson<{status: string; data: {gameId: string}}>(`/api/lobbies/${lobbyId}/start`, {
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store"
+    }).then(response => response.data.gameId);
+}

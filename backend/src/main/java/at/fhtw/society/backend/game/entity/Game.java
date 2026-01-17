@@ -104,6 +104,7 @@ public class Game {
     }
 
     // Convenience (not persisted, but nice)
+    // Note: gamemaster might be null for guest sessions, check LobbyMember with GAMEMASTER role instead
     @Transient public Player getGamemaster() { return lobby != null ? lobby.getGamemaster() : null; }
     @Transient public Theme getTheme() { return lobby != null ? lobby.getTheme() : null; }
     @Transient public int getMaxPlayers() { return lobby != null ? lobby.getMaxPlayers() : 0; }

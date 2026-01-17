@@ -5,8 +5,10 @@ import at.fhtw.society.backend.ai.Message;
 import at.fhtw.society.backend.game.dto.*;
 import at.fhtw.society.backend.game.entity.*;
 import at.fhtw.society.backend.game.repo.*;
-import at.fhtw.society.backend.game.entity.Player;
-import at.fhtw.society.backend.game.repo.PlayerRepository;
+import at.fhtw.society.backend.lobby.entity.Lobby;
+import at.fhtw.society.backend.lobby.entity.LobbyMember;
+import at.fhtw.society.backend.lobby.repo.LobbyRepository;
+import at.fhtw.society.backend.lobby.repo.LobbyMemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +23,8 @@ import java.util.stream.Collectors;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private final ThemeRepository themeRepository;
+    private final LobbyRepository lobbyRepository;
+    private final LobbyMemberRepository lobbyMemberRepository;
     private final PlayerRepository playerRepository;
 
     private final RoundRepository roundRepository;
@@ -30,27 +33,21 @@ public class GameService {
     private final DeepinfraService deepinfraService;
     private final ObjectMapper objectMapper;
 
-    /* -----------------------------
-       GAME APIs
-       ----------------------------- */
-
     @Transactional
-    public UUID createGame(CreateGameDto dto) {
-        Theme theme = themeRepository.findByTheme(dto.getThemeName());
-        if (theme == null) throw new IllegalArgumentException("Theme not found: " + dto.getThemeName());
+    public UUID createGame(UUID lobbyId) {
+        Lobby lobby = lobbyRepository.findById(lobbyId)
+                .orElseThrow(() -> new IllegalArgumentException("Lobby not found: " + lobbyId));
 
-        Player gm = playerRepository.findByUsername(dto.getGamemaster())
-                .orElseThrow(() -> new IllegalArgumentException("Gamemaster player not found: " + dto.getGamemaster()));
+        // Check if game already exists for this lobby
+        if (lobby.getGame() != null) {
+            throw new IllegalStateException("Game already exists for this lobby");
+        }
 
-        Game game = new Game(gm, theme, dto.getMaxRounds(), dto.getMaxPlayers());
+        // Create the game from the lobby
+        Game game = new Game(lobby);
         game.setStatus(GameStatus.CREATED);
 
-        // optional: add GM as joined player
-        gm.getGames().add(game);
-        game.getPlayers().add(gm);
-
         gameRepository.save(game);
-        playerRepository.save(gm);
 
         return game.getId();
     }
@@ -59,18 +56,20 @@ public class GameService {
     public void joinGame(UUID gameId, UUID playerId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
 
-        if (game.getPlayers().size() >= game.getMaxPlayers()) {
-            throw new IllegalStateException("Game is full.");
+        Lobby lobby = game.getLobby();
+        if (lobby == null) {
+            throw new IllegalStateException("Game has no associated lobby");
         }
 
-        // owning side = Player.games
-        player.getGames().add(game);
-        game.getPlayers().add(player);
+        // Check if player is a member of the lobby
+        boolean isMember = lobbyMemberRepository.existsByLobby_IdAndPlayerId(lobby.getId(), playerId);
+        if (!isMember) {
+            throw new IllegalArgumentException("Player is not a member of the lobby for this game");
+        }
 
-        playerRepository.save(player);
+        // Players join via the lobby, so this method might not be needed anymore
+        // The game automatically has access to all lobby members through game.getLobby().getMembers()
     }
 
     /**
@@ -174,12 +173,12 @@ public class GameService {
         Round round = game.getCurrentRound();
         if (round == null) throw new IllegalStateException("No active round to vote on.");
 
-        Player player = playerRepository.findById(req.getPlayerId())
-                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + req.getPlayerId()));
+        Lobby lobby = game.getLobby();
+        if (lobby == null) throw new IllegalStateException("Game has no associated lobby");
 
-        // ensure player is in this game
-        boolean inGame = game.getPlayers().stream().anyMatch(p -> p.getId().equals(player.getId()));
-        if (!inGame) throw new IllegalArgumentException("Player is not part of this game.");
+        // Check if player is a member of the lobby
+        LobbyMember member = lobbyMemberRepository.findByLobby_IdAndPlayerId(lobby.getId(), req.getPlayerId())
+                .orElseThrow(() -> new IllegalArgumentException("Player is not a member of this game's lobby"));
 
         // validate choiceId exists in current dilemma
         DilemmaDto dilemma = objectMapper.convertValue(round.getDilemma(), DilemmaDto.class);
@@ -188,11 +187,13 @@ public class GameService {
         if (!choiceValid) throw new IllegalArgumentException("Invalid choiceId: " + req.getChoiceId());
 
         // prevent double vote
-        if (votingRepository.existsByRound_IdAndPlayer_Id(round.getId(), player.getId())) {
+        if (votingRepository.existsByRound_IdAndPlayer_Id(round.getId(), req.getPlayerId())) {
             throw new IllegalArgumentException("Player already voted in this round.");
         }
 
-        // store vote
+        // store vote - Note: Voting entity still uses Player, so we need to fetch it
+        Player player = playerRepository.findById(req.getPlayerId())
+                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + req.getPlayerId()));
         votingRepository.save(new Voting(round, player, req.getChoiceId()));
 
         // keep conversation "on track" (record the action in the chat history)
@@ -200,7 +201,7 @@ public class GameService {
         history.add(new Message(
                 "user",
                 "{\"type\":\"vote\",\"round\":" + round.getNumber() +
-                        ",\"playerId\":\"" + player.getId() +
+                        ",\"playerId\":\"" + req.getPlayerId() +
                         "\",\"choiceId\":" + req.getChoiceId() + "}"
         ));
         game.setConversationList(history);
@@ -215,7 +216,7 @@ public class GameService {
         result.setRoundNumber(round.getNumber());
         result.setCounts(counts);
 
-        long expectedVotes = game.getPlayers().size();
+        long expectedVotes = lobby.getMembers().size();
         boolean completed = expectedVotes > 0 && votes.size() >= expectedVotes;
         result.setRoundCompleted(completed);
 
@@ -231,6 +232,10 @@ public class GameService {
 
         List<Message> updated = deepinfraService.chatConversion(outcomeHistory);
         game.setConversationList(updated);
+
+        // Parse outcome to extract summary
+        String outcomeSummary = parseOutcomeSummary(updated);
+        result.setOutcomeSummary(outcomeSummary);
 
         // Close round
         round.setActive(false);
@@ -333,6 +338,107 @@ public class GameService {
             return objectMapper.readValue(json, DilemmaDto.class);
         } catch (Exception e) {
             throw new IllegalStateException("AI returned invalid dilemma JSON. Raw:\n" + last.getContent(), e);
+        }
+    }
+
+    private String parseOutcomeSummary(List<Message> updated) {
+        Message last = updated.get(updated.size() - 1);
+        String json = extractJson(last.getContent());
+        try {
+            Map<String, Object> outcome = objectMapper.readValue(json, Map.class);
+            return (String) outcome.get("summary");
+        } catch (Exception e) {
+            throw new IllegalStateException("AI returned invalid outcome JSON. Raw:\n" + last.getContent(), e);
+        }
+    }
+
+    /**
+     * Get the final outcome of a completed game.
+     * This includes all round summaries and a final AI-generated summary.
+     */
+    @Transactional
+    public FinalOutcomeDto getFinalOutcome(UUID gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
+
+        if (game.getStatus() != GameStatus.ENDED) {
+            throw new IllegalStateException("Game is not yet completed. Current status: " + game.getStatus());
+        }
+
+        // Fetch all rounds for this game
+        List<Round> rounds = roundRepository.findAllByGame_IdOrderByNumberAsc(gameId);
+
+        // Build round summaries
+        List<FinalOutcomeDto.RoundSummary> roundSummaries = rounds.stream()
+                .map(round -> {
+                    List<Voting> votes = votingRepository.findAllByRound_Id(round.getId());
+                    Map<Integer, Long> counts = votes.stream()
+                            .collect(Collectors.groupingBy(Voting::getChoiceId, Collectors.counting()));
+
+                    // Determine winning choice (most votes)
+                    Integer winningChoiceId = counts.entrySet().stream()
+                            .max(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey)
+                            .orElse(null);
+
+                    DilemmaDto dilemma = objectMapper.convertValue(round.getDilemma(), DilemmaDto.class);
+
+                    return FinalOutcomeDto.RoundSummary.builder()
+                            .roundNumber(round.getNumber())
+                            .dilemmaTitle(dilemma.getTitle())
+                            .voteCounts(counts)
+                            .winningChoiceId(winningChoiceId)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        // Calculate total votes by choice across all rounds
+        Map<Integer, Long> totalVotesByChoice = rounds.stream()
+                .flatMap(round -> votingRepository.findAllByRound_Id(round.getId()).stream())
+                .collect(Collectors.groupingBy(Voting::getChoiceId, Collectors.counting()));
+
+        // Generate final summary from AI
+        String finalSummary = generateFinalSummary(game, roundSummaries);
+
+        return FinalOutcomeDto.builder()
+                .gameId(gameId.toString())
+                .totalRounds(game.getMaxRounds())
+                .finalSummary(finalSummary)
+                .roundSummaries(roundSummaries)
+                .totalVotesByChoice(totalVotesByChoice)
+                .build();
+    }
+
+    private String generateFinalSummary(Game game, List<FinalOutcomeDto.RoundSummary> roundSummaries) {
+        // Build a prompt for the AI to generate a final summary
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("The game has ended after ").append(game.getMaxRounds()).append(" rounds.\n\n");
+        prompt.append("Round summaries:\n");
+
+        for (FinalOutcomeDto.RoundSummary summary : roundSummaries) {
+            prompt.append("- Round ").append(summary.getRoundNumber())
+                    .append(": ").append(summary.getDilemmaTitle())
+                    .append(" (Winning choice: ").append(summary.getWinningChoiceId()).append(")\n");
+        }
+
+        prompt.append("\nProvide a final summary of the game's outcome (2-3 sentences) in JSON format:\n");
+        prompt.append("{\"type\":\"final\",\"summary\":\"...\"}");
+
+        List<Message> history = new ArrayList<>(game.getConversationList());
+        history.add(new Message("user", prompt.toString()));
+
+        List<Message> updated = deepinfraService.chatConversion(history);
+        game.setConversationList(updated);
+
+        // Parse the final summary
+        Message last = updated.get(updated.size() - 1);
+        String json = extractJson(last.getContent());
+        try {
+            Map<String, Object> finalOutcome = objectMapper.readValue(json, Map.class);
+            return (String) finalOutcome.get("summary");
+        } catch (Exception e) {
+            // Fallback if AI fails
+            return "The game has concluded after " + game.getMaxRounds() + " rounds of decision-making.";
         }
     }
 }

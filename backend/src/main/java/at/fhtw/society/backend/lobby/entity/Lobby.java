@@ -28,10 +28,11 @@ public class Lobby {
 
     /**
      * Moved from Game -> Lobby.
-     * If you want to allow "no GM yet", make nullable = true / optional = true for a while.
+     * Since we use guest sessions (no Player entities), we store the gamemaster info in LobbyMember instead.
+     * This field is kept for future use when proper user accounts are implemented.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "gamemaster_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "gamemaster_id", nullable = true)
     private Player gamemaster;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

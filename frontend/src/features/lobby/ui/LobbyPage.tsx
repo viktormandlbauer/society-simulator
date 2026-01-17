@@ -4,16 +4,19 @@ import { useMemo, useState } from "react";
 import { NesButton } from "@/shared/ui/NesButton";
 import { useSessionStore } from "@/features/session/sessionStore";
 import { useLobbyRuntimeStore } from "@/features/lobby/lobbyRuntimeStore";
-import { leaveLobby as leaveLobbyApi } from "@/features/lobby/api/lobbies";
+import { leaveLobby as leaveLobbyApi, startGameFromLobby } from "@/features/lobby/api/lobbies";
 import type { ProblemDetails } from "@/shared/http/problemDetails";
 import { asProblemDetails, getProblemMessage } from "@/shared/http/problemDetails";
+import { useRouter } from "next/navigation";
 
 export function LobbyPage() {
+    const router = useRouter();
     const session = useSessionStore((s) => s.session);
     const lobby = useLobbyRuntimeStore((s) => s.currentLobby);
     const leaveLobbyLocal = useLobbyRuntimeStore((s) => s.leaveLobbyLocal);
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
     const [error, setError] = useState<ProblemDetails | null>(null);
 
     const membersSorted = useMemo(() => {
@@ -25,6 +28,30 @@ export function LobbyPage() {
             return a.joinedAt.localeCompare(b.joinedAt);
         });
     }, [lobby]);
+
+    const isGamemaster = useMemo(() => {
+        if (!session || !lobby) return false;
+        const member = lobby.members.find(m => m.playerId === session.playerId);
+        return member?.role === "GAMEMASTER";
+    }, [session, lobby]);
+
+    const handleStartGame = async () => {
+        if (!session || !lobby) return;
+
+        setError(null);
+        setIsStarting(true);
+
+        try {
+            const gameId = await startGameFromLobby(session.token, lobby.lobbyId);
+            // Navigate to the game page
+            router.push(`/game/${gameId}`);
+        } catch (e: unknown) {
+            const p = asProblemDetails(e);
+            setError(p ?? { title: "Error", detail: "Failed to start game." });
+        } finally {
+            setIsStarting(false);
+        }
+    };
 
     if (!session || !lobby) return null;
 
@@ -68,9 +95,19 @@ export function LobbyPage() {
                         </div>
                     </div>
 
+                    {isGamemaster && (
+                        <NesButton
+                            variant="success"
+                            disabled={isStarting || isLoading}
+                            onClick={handleStartGame}
+                        >
+                            {isStarting ? "Starting..." : "Start Game"}
+                        </NesButton>
+                    )}
+
                     <NesButton
                         variant="warning"
-                        disabled={isLoading}
+                        disabled={isLoading || isStarting}
                         onClick={async () => {
                             setError(null);
                             setIsLoading(true);
