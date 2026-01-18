@@ -66,6 +66,55 @@ export function useDilemma({ gameId, playerId, onVoteComplete }: UseDilemmaOptio
         }
     }, [gameId, token]);
 
+    const updateDilemma = useCallback((newDilemma: Dilemma) => {
+        console.log("updateDilemma called with new dilemma ID:", newDilemma.id);
+        console.log("New dilemma data:", newDilemma);
+        console.log("Resetting hasVoted from", hasVoted, "to false");
+        setDilemma(newDilemma);
+        setHasVoted(false);
+        setCurrentRoundNumber(newDilemma.id);
+        console.log("State updates queued - dilemma should update on next render");
+    }, [hasVoted]);
+
+    const triggerGameOver = useCallback(async () => {
+        console.log("triggerGameOver called - fetching final outcome");
+        if (!token) {
+            console.error("Cannot fetch final outcome: no token");
+            return;
+        }
+
+        setIsFetchingOutcome(true);
+
+        // Wait a bit for the backend to finish processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Retry logic for fetching final outcome
+        let retries = 3;
+        let outcome = null;
+
+        while (retries > 0 && !outcome) {
+            try {
+                outcome = await getFinalOutcome(token, gameId);
+                console.log("Final outcome received:", outcome);
+                setFinalOutcome(outcome);
+                setIsGameOver(true);
+                break;
+            } catch (outcomeErr) {
+                retries--;
+                console.warn(`Failed to fetch final outcome, retries left: ${retries}`, outcomeErr);
+
+                if (retries > 0) {
+                    // Wait before retrying (exponential backoff)
+                    await new Promise(resolve => setTimeout(resolve, 1500 * (4 - retries)));
+                } else {
+                    console.error("Failed to fetch final outcome after all retries:", outcomeErr);
+                }
+            }
+        }
+
+        setIsFetchingOutcome(false);
+    }, [token, gameId]);
+
     const submitChoice = useCallback(async (choiceId: number) => {
         if (!token) {
             setError("You must be logged in to vote.");
@@ -177,5 +226,7 @@ export function useDilemma({ gameId, playerId, onVoteComplete }: UseDilemmaOptio
         finalOutcome,
         hasVoted,
         isFetchingOutcome,
+        updateDilemma,
+        triggerGameOver,
     };
 }

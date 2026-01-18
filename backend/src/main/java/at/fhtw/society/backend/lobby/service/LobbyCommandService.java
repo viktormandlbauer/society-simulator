@@ -30,13 +30,15 @@ public class LobbyCommandService {
     private final ThemeRepository themeRepository;
     private final PasswordEncoder passwordEncoder;
     private final LobbyViewMapper lobbyViewMapper;
+    private final LobbyChatService lobbyChatService;
 
-    public LobbyCommandService(LobbyRepository lobbyRepository, LobbyMemberRepository lobbyMemberRepository, ThemeRepository themeRepository, PasswordEncoder passwordEncoder, LobbyViewMapper lobbyViewMapper) {
+    public LobbyCommandService(LobbyRepository lobbyRepository, LobbyMemberRepository lobbyMemberRepository, ThemeRepository themeRepository, PasswordEncoder passwordEncoder, LobbyViewMapper lobbyViewMapper, LobbyChatService lobbyChatService) {
         this.lobbyRepository = lobbyRepository;
         this.lobbyMemberRepository = lobbyMemberRepository;
         this.themeRepository = themeRepository;
         this.passwordEncoder = passwordEncoder;
         this.lobbyViewMapper = lobbyViewMapper;
+        this.lobbyChatService = lobbyChatService;
     }
 
     /**
@@ -88,6 +90,9 @@ public class LobbyCommandService {
 
         // Save lobby in database
         Lobby savedLobby = lobbyRepository.save(lobby);
+
+        // Send system message to lobby chat
+        lobbyChatService.sendSystemMessage(savedLobby.getId(), identity.name() + " created the lobby");
 
         return lobbyViewMapper.toDto(savedLobby);
     }
@@ -155,6 +160,9 @@ public class LobbyCommandService {
 
         updatedLobby.getMembers().sort(Comparator.comparing(LobbyMember::getJoinedAt));
 
+        // Send system message to lobby chat
+        lobbyChatService.sendSystemMessage(lobbyId, identity.name() + " joined the lobby");
+
         return lobbyViewMapper.toDto(updatedLobby);
     }
 
@@ -176,6 +184,9 @@ public class LobbyCommandService {
         boolean wasGamemaster = leavingMember.getRole() == LobbyRole.GAMEMASTER;
 
         lobbyMemberRepository.delete(leavingMember);
+
+        // Send system message to lobby chat
+        lobbyChatService.sendSystemMessage(lobbyId, leavingMember.getName() + " left the lobby");
 
         boolean isLobbyEmpty = lobbyMemberRepository.countByLobby_Id(lobbyId) == 0L;
 
@@ -214,5 +225,14 @@ public class LobbyCommandService {
         if (member.getRole() != LobbyRole.GAMEMASTER) {
             throw new NotGamemasterException(lobbyId, playerId);
         }
+    }
+
+    /**
+     * Notifies all members of a lobby via WebSocket that the game has started.
+     * @param lobbyId - ID of the lobby
+     * @param gameId - ID of the started game
+     */
+    public void notifyGameStarted(UUID lobbyId, UUID gameId) {
+        lobbyChatService.notifyGameStarted(lobbyId, gameId);
     }
 }

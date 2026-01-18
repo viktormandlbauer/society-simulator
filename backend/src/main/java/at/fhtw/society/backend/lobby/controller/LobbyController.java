@@ -85,6 +85,9 @@ public class LobbyController {
         UUID gameId = gameService.createGame(lobbyId);
         gameService.startGame(gameId);
 
+        // Notify all lobby members via WebSocket that the game has started
+        lobbyCommandService.notifyGameStarted(lobbyId, gameId);
+
         return ResponseEntity.ok(Map.of("status", "success", "data", Map.of("gameId", gameId)));
     }
 }
