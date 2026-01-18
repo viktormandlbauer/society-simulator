@@ -51,9 +51,10 @@ Built with Spring, React / Next.js, WebSocket, styled with NES.css, and powered 
 
 ### Backend
 
-- Java
+- Java 21 with Maven
 - Spring (Spring Boot)
 - WebSocket (real-time communication)
+- PostgreSQL
 
 ### Frontend
 
@@ -70,3 +71,61 @@ Built with Spring, React / Next.js, WebSocket, styled with NES.css, and powered 
 
 - REST API
 - WebSocket
+
+## How to Setup
+
+You can run the project **locally** or using **Docker**.
+
+### For local setup:
+- **Java 21**
+- **Node.js & npm**
+
+### For Docker setup:
+- **Docker**
+- **Docker Compose**
+
+---
+
+## Environment Variables
+
+You need **two environment files**:
+- `.env.local` → used by the **frontend**
+- `.env` → used by the **backend**
+
+The `.env.local` file should include: 
+
+SPRING_API_URL=http://localhost:8080
+
+The `.env` file should include:
+
+DEEPINFRA_API_URL=[https://api.deepinfra.com/v1/openai](https://api.deepinfra.com/v1/openai "https://api.deepinfra.com/v1/openai")
+DEEPINFRA_API_KEY=<API-KEY>
+DEEPINFRA_API_MODEL=meta-llama/Llama-4-Scout-17B-16E-Instruct 
+DB_URL=jdbc:postgresql://localhost:5432/society_db 
+DB_USERNAME=society_user 
+DB_PASSWORD=secure_password 
+JWT_SECRET=someverysecuryjwtkey12332131312312312321312
+
+Make sure both files are configured correctly before starting the application.
+
+---
+
+## Run Locally (Without Docker)
+
+### 1. Start the Backend
+Run the Spring Boot backend application using Java 21.
+
+### 2. Start the Frontend
+```bash
+npm install
+npm run dev
+```
+## Run via Docker 
+
+### 1. Build and start all services
+
+`docker compose -f docker-compose.yml up --build --force-recreate -d`
+
+### 2. Stop the application
+
+`docker-compose down`
