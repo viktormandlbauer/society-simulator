@@ -32,6 +32,7 @@ public class GameService {
 
     private final DeepinfraService deepinfraService;
     private final ObjectMapper objectMapper;
+    private final GameWebSocketService gameWebSocketService;
 
     @Transactional
     public UUID createGame(UUID lobbyId) {
@@ -245,12 +246,19 @@ public class GameService {
             game.setStatus(GameStatus.ENDED);
             game.setEndedAt(OffsetDateTime.now());
             result.setNextDilemma(null);
+
+            // Notify all players that voting is complete (game ended)
+            gameWebSocketService.notifyVoteCompleted(gameId, result);
             return result;
         }
 
         // Auto-create next round (optional; remove this if you want GM to trigger newRound manually)
         DilemmaDto next = newRoundInternal(game, round.getNumber() + 1);
         result.setNextDilemma(next);
+
+        // Notify all players that voting is complete and show outcome
+        gameWebSocketService.notifyVoteCompleted(gameId, result);
+
         return result;
     }
 

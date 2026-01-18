@@ -4,12 +4,24 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import type { ChatMessageDto, ChatMessageRequestDto } from "@/features/lobby/api/chatTypes";
 
+type VoteResult = {
+    roundNumber: number;
+    accepted: boolean;
+    roundCompleted: boolean;
+    counts: Record<number, number>;
+    nextDilemma: unknown | null;
+    outcomeSummary: string | null;
+};
+
 type UseLobbyChat = {
     messages: ChatMessageDto[];
     isConnected: boolean;
     error: string | null;
     sendMessage: (message: string) => void;
     clearMessages: () => void;
+    onGameStarted: (callback: (gameId: string) => void) => void;
+    joinGameRoom: (gameId: string) => void;
+    onVoteCompleted: (callback: (voteResult: VoteResult) => void) => void;
 };
 
 const SOCKET_URL = "http://localhost:9092";
@@ -20,6 +32,8 @@ export function useLobbyChat(token: string | null, lobbyId: string | null): UseL
     const [error, setError] = useState<string | null>(null);
     const socketRef = useRef<Socket | null>(null);
     const currentLobbyIdRef = useRef<string | null>(null);
+    const gameStartedCallbackRef = useRef<((gameId: string) => void) | null>(null);
+    const voteCompletedCallbackRef = useRef<((voteResult: VoteResult) => void) | null>(null);
 
     // Connect to Socket.IO server
     useEffect(() => {
@@ -74,6 +88,25 @@ export function useLobbyChat(token: string | null, lobbyId: string | null): UseL
         socket.on("error", (errorMessage: string) => {
             console.error("Chat error:", errorMessage);
             setError(errorMessage);
+        });
+
+        // Listen for game started event
+        socket.on("gameStarted", (gameId: string) => {
+            console.log("Game started event received:", gameId);
+            if (gameStartedCallbackRef.current) {
+                gameStartedCallbackRef.current(gameId);
+            }
+        });
+
+        // Listen for vote completed event
+        socket.on("voteCompleted", (voteResult: VoteResult) => {
+            console.log("🔔 WebSocket: Vote completed event received at socket level:", voteResult);
+            if (voteCompletedCallbackRef.current) {
+                console.log("✅ Callback exists, invoking it");
+                voteCompletedCallbackRef.current(voteResult);
+            } else {
+                console.warn("⚠️ No callback registered for voteCompleted event!");
+            }
         });
 
         // Cleanup on unmount
@@ -140,11 +173,36 @@ export function useLobbyChat(token: string | null, lobbyId: string | null): UseL
         setMessages([]);
     }, []);
 
+    const onGameStarted = useCallback((callback: (gameId: string) => void) => {
+        gameStartedCallbackRef.current = callback;
+    }, []);
+
+    const joinGameRoom = useCallback((gameId: string) => {
+        const socket = socketRef.current;
+        if (!socket || !socket.connected) {
+            console.warn("Cannot join game room: socket not connected");
+            return;
+        }
+
+        console.log("🎮 Joining game room:", gameId);
+        socket.emit("joinGame", gameId, (response: string) => {
+            console.log("✅ Join game room response:", response);
+        });
+    }, []);
+
+    const onVoteCompleted = useCallback((callback: (voteResult: VoteResult) => void) => {
+        console.log("📝 Registering vote completed callback");
+        voteCompletedCallbackRef.current = callback;
+    }, []);
+
     return {
         messages,
         isConnected,
         error,
         sendMessage,
         clearMessages,
+        onGameStarted,
+        joinGameRoom,
+        onVoteCompleted,
     };
 }

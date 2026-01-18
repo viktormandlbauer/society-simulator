@@ -32,6 +32,8 @@ public class LobbyChatService {
     private static final String EVENT_SEND_MESSAGE = "sendMessage";
     private static final String EVENT_RECEIVE_MESSAGE = "receiveMessage";
     private static final String EVENT_ERROR = "error";
+    private static final String EVENT_GAME_STARTED = "gameStarted";
+    private static final String EVENT_JOIN_GAME = "joinGame";
 
     private final SocketIOServer server;
     private final JwtService jwtService;
@@ -58,6 +60,7 @@ public class LobbyChatService {
         server.addEventListener(EVENT_JOIN_LOBBY, String.class, onJoinLobby());
         server.addEventListener(EVENT_LEAVE_LOBBY, String.class, onLeaveLobby());
         server.addEventListener(EVENT_SEND_MESSAGE, ChatMessageRequestDto.class, onSendMessage());
+        server.addEventListener(EVENT_JOIN_GAME, String.class, onJoinGame());
         log.info("LobbyChatService initialized with event listeners");
     }
 
@@ -226,5 +229,43 @@ public class LobbyChatService {
 
         server.getRoomOperations(lobbyId.toString()).sendEvent(EVENT_RECEIVE_MESSAGE, systemMessage);
         log.info("System message sent to lobby {}: {}", lobbyId, message);
+    }
+
+    /**
+     * Notifies all members of a lobby that the game has started.
+     * Sends the gameId so clients can navigate to the game page.
+     */
+    public void notifyGameStarted(UUID lobbyId, UUID gameId) {
+        server.getRoomOperations(lobbyId.toString()).sendEvent(EVENT_GAME_STARTED, gameId.toString());
+        log.info("Game started notification sent to lobby {}: gameId={}", lobbyId, gameId);
+    }
+
+    /**
+     * Event listener for when a client joins a game room.
+     * This allows them to receive game-specific events like vote completion.
+     */
+    private DataListener<String> onJoinGame() {
+        return (client, gameId, ackSender) -> {
+            UUID playerId = client.get("playerId");
+            if (playerId == null) {
+                client.sendEvent(EVENT_ERROR, "Not authenticated");
+                return;
+            }
+
+            try {
+                UUID gameUuid = UUID.fromString(gameId);
+                String gameRoom = "game:" + gameUuid.toString();
+
+                client.joinRoom(gameRoom);
+                log.info("Player {} joined game room {}", playerId, gameRoom);
+
+                if (ackSender != null) {
+                    ackSender.sendAckData("Joined game room successfully");
+                }
+            } catch (IllegalArgumentException e) {
+                client.sendEvent(EVENT_ERROR, "Invalid game ID");
+                log.warn("Player {} attempted to join game with invalid ID: {}", playerId, gameId);
+            }
+        };
     }
 }

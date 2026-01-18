@@ -226,4 +226,13 @@ public class LobbyCommandService {
             throw new NotGamemasterException(lobbyId, playerId);
         }
     }
+
+    /**
+     * Notifies all members of a lobby via WebSocket that the game has started.
+     * @param lobbyId - ID of the lobby
+     * @param gameId - ID of the started game
+     */
+    public void notifyGameStarted(UUID lobbyId, UUID gameId) {
+        lobbyChatService.notifyGameStarted(lobbyId, gameId);
+    }
 }

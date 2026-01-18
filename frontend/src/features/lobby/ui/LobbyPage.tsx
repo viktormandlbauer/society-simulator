@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { NesButton } from "@/shared/ui/NesButton";
 import { useSessionStore } from "@/features/session/sessionStore";
 import { useLobbyRuntimeStore } from "@/features/lobby/lobbyRuntimeStore";
@@ -22,10 +22,18 @@ export function LobbyPage() {
     const [error, setError] = useState<ProblemDetails | null>(null);
 
     // Initialize lobby chat
-    const { messages, isConnected, error: chatError, sendMessage } = useLobbyChat(
+    const { messages, isConnected, error: chatError, sendMessage, onGameStarted } = useLobbyChat(
         session?.token ?? null,
         lobby?.lobbyId ?? null
     );
+
+    // Listen for game started event and navigate to game page
+    useEffect(() => {
+        onGameStarted((gameId: string) => {
+            console.log("Navigating to game:", gameId);
+            router.push(`/game/${gameId}`);
+        });
+    }, [onGameStarted, router]);
 
     const membersSorted = useMemo(() => {
         if (!lobby) return [];
