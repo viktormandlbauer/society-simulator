@@ -20,7 +20,9 @@ security:
     ttl-minutes: 120
     issuer: society-simulator-backend
 
-
+socketio:
+  host: localhost
+  port: 9092
 
 # Logging/debugging configuration
 logging.level.org.flywaydb: INFO

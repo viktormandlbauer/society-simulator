@@ -103,6 +103,13 @@
             <version>0.2.0</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Netty SocketIO for WebSocket chat -->
+        <dependency>
+            <groupId>com.corundumstudio.socketio</groupId>
+            <artifactId>netty-socketio</artifactId>
+            <version>2.0.11</version>
+        </dependency>
     </dependencies>
 
     <build>
